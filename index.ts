@@ -330,9 +330,13 @@ client.on('messageCreate', async (msg) => {
                                 play_song(matches[0], voiceConnection);
                             } else {
                                 let str = 'Matches: \n';
-                                matches.forEach((m) => {
-                                    str += `${m.title}\n`;
-                                });
+                                const maxLen = 20;
+                                for (let i = 0; i < matches.length && i < maxLen; ++i) {
+                                    str += `${matches[i].title}\n`;
+                                }
+                                if (matches.length > maxLen) {
+                                    str += `...and ${matches.length - maxLen} more`;
+                                }
                                 msg.reply(str);
                             }
                         } else {
