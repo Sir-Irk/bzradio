@@ -29,7 +29,7 @@ client.once('disconnect', () => {
     console.log('Disconnect!');
 });
 
-let songList: ytpl.Item[] = [];
+let songList: playlist_entry[] = [];
 let curSong = 0;
 let isPlaying = false;
 
@@ -75,7 +75,7 @@ function make_duration_str(miliseconds: number) {
 let textChannel: Discord.DMChannel = null;
 
 async function start_playing(member: Discord.GuildMember, url: string = null) {
-    if (songList.length === 0 && !url) {
+    if (songList.entries.length === 0 && !url) {
         textChannel.send('no songs in queue');
         return;
     }
@@ -116,8 +116,20 @@ let currentSongDurationInSeconds = 0;
 let playingEmbed: Discord.MessageEmbed = null;
 let progressMessage: Discord.Message = null;
 let loopMode: boolean = false;
-let lastSongPlayed: ytpl.Item = null;
-let lastUrlPlayed: string = null;
+let lastSongPlayed: playlist_entry = null;
+
+class playlist_entry {
+    url: string = null;
+    title: string = null;
+    thumbUrl: string = null;
+    durationInSec: number = 0;
+    constructor(url: string, title: string, thumbUrl: string, durationInSec: number) {
+        this.url = url;
+        this.title = title;
+        this.thumbUrl = thumbUrl;
+        this.durationInSec = durationInSec;
+    }
+}
 
 async function update_playback_time() {
     while (true) {
@@ -140,9 +152,10 @@ async function update_playback_time() {
     }
 }
 async function play_song_url(url: string, connection: VoiceConnection) {
-    const info = await playDl.video_info(url);
+    let info = null;
     let stream = null;
     try {
+        info = await playDl.video_info(url);
         stream = await playDl.stream(url);
         resource = createAudioResource(stream.stream, {
             inputType: stream.type,
@@ -153,8 +166,12 @@ async function play_song_url(url: string, connection: VoiceConnection) {
         textChannel.send(`Error fetching url: ${url}`);
         return;
     }
-    lastSongPlayed = null;
-    lastUrlPlayed = url;
+    lastSongPlayed = new playlist_entry(
+        url,
+        info.video_details?.title,
+        info.video_details.thumbnails[0].url,
+        info.video_details.durationInSec
+    );
     currentSongDurationInSeconds = info.video_details.durationInSec;
     playingEmbed = new Discord.MessageEmbed().setTitle(
         `▶️ ${info.video_details?.title} | ${make_duration_str(info.video_details?.durationInSec * 1000)}`
@@ -165,7 +182,7 @@ async function play_song_url(url: string, connection: VoiceConnection) {
     const status = player.state.status;
 }
 
-async function play_song(song: ytpl.Item, connection: VoiceConnection) {
+async function play_song(song: playlist_entry, connection: VoiceConnection) {
     if (!connection) return;
     let stream = null;
     try {
@@ -179,37 +196,70 @@ async function play_song(song: ytpl.Item, connection: VoiceConnection) {
         textChannel.send(`Error fetching url: ${song.url}`);
         return;
     }
+
     lastSongPlayed = song;
-    lastUrlPlayed = null;
-    currentSongDurationInSeconds = song.durationSec;
-    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title} | ${song.duration}`);
-    playingEmbed.setImage(`${song.bestThumbnail.url}`);
+    currentSongDurationInSeconds = song.durationInSec;
+    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title} | ${song.durationInSec}`);
+    playingEmbed.setImage(`${song.thumbUrl}`);
     await textChannel.send({ embeds: [playingEmbed] });
     progressMessage = await textChannel.send(`...`);
     const status = player.state.status;
+}
+
+async function add_url(list: playlist_entry[], url: string) {
+    const match = list.find((s) => {
+        return s.url === url;
+    });
+    if (match) {
+        textChannel.send(`That url is already in the playlist`);
+    } else {
+        let info = null;
+        let stream = null;
+        try {
+            info = await playDl.video_info(url);
+            list.push(
+                new playlist_entry(url, info.video_details.title, info.video_details.thumbnails[0].url, info.video_details.durationInSec)
+            );
+            textChannel.send(`Song added`);
+        } catch (e) {
+            textChannel.send(`Failed to add url`);
+        }
+    }
+}
+
+function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
+    const set = new Set<playlist_entry>(songList);
+    items.forEach((i) => {
+        set.add(new playlist_entry(i.url, i.title, i.bestThumbnail.url, i.durationSec));
+    });
+    songList = [];
+    set.forEach((i) => {
+        songList.push(i);
+    });
 }
 
 async function load_playlist(url: string) {
     await ytpl(url, { pages: 1 })
         .then(async (pl) => {
             textChannel.send('Fetching playlist. This may take a bit');
-            songList = songList.concat(pl.items);
+            add_playlist(songList, pl.items);
+
             if (pl.continuation) {
                 let cont = await ytpl.continueReq(pl.continuation);
                 while (true) {
-                    songList = songList.concat(cont.items);
+                    add_playlist(songList, pl.items);
                     if (!cont.continuation) break;
                     cont = await ytpl.continueReq(cont.continuation);
                 }
             }
-            textChannel.send(`Done! Loaded ${songList.length} songs`);
+            textChannel.send(`Done! Loaded ${songList.entries.length} songs`);
         })
         .catch((e) => {
             textChannel.send(`Failed to fetch playist`);
         });
 }
 
-function get_next_song(): ytpl.Item {
+function get_next_song(): playlist_entry {
     curSong = (curSong + 1) % songList.length;
     return songList[curSong];
 }
@@ -217,12 +267,10 @@ function get_next_song(): ytpl.Item {
 let voiceConnection: VoiceConnection = null;
 
 player.on(AudioPlayerStatus.Idle, () => {
-    if (songList.length > 0) {
+    if (songList.entries.length > 0) {
         if (loopMode) {
             if (lastSongPlayed) {
                 play_song(lastSongPlayed, voiceConnection);
-            } else if (lastUrlPlayed) {
-                play_song_url(lastUrlPlayed, voiceConnection);
             } else {
                 textChannel.send(`Something went wrong with loop mode`);
                 play_song(get_next_song(), voiceConnection);
@@ -284,6 +332,16 @@ client.on('messageCreate', async (msg) => {
                 }
                 curSong = (curSong - 1) % songList.length;
                 play_song(songList[curSong], voiceConnection);
+            }
+            break;
+        case 'add':
+            {
+                if (args.length < 1) {
+                    msg.reply(`usage: ${prefix}add <url>`);
+                    return;
+                }
+
+                await add_url(songList, args[0]);
             }
             break;
         case 'pause':
