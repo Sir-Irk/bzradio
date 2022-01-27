@@ -230,14 +230,14 @@ async function add_url(list: playlist_entry[], url: string) {
 function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
     const map = new Map<string, playlist_entry>();
     list.forEach((i) => {
-        if (!map.has(i.url)) {
-            map.set(i.url, new playlist_entry(i.url, i.title, i.thumbUrl, i.durationInSec));
+        if (!map.has(i.title)) {
+            map.set(i.title, new playlist_entry(i.url, i.title, i.thumbUrl, i.durationInSec));
         }
     });
     console.log(`${map.size}`);
     items.forEach((i) => {
-        if (!map.has(i.url)) {
-            map.set(i.url, new playlist_entry(i.url, i.title, i.bestThumbnail.url, i.durationSec));
+        if (!map.has(i.title)) {
+            map.set(i.title, new playlist_entry(i.url, i.title, i.bestThumbnail.url, i.durationSec));
         }
     });
     console.log(`${map.size}`);
