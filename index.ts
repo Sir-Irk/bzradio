@@ -173,9 +173,7 @@ async function play_song_url(url: string, connection: VoiceConnection) {
         info.video_details.durationInSec
     );
     currentSongDurationInSeconds = info.video_details.durationInSec;
-    playingEmbed = new Discord.MessageEmbed().setTitle(
-        `▶️ ${info.video_details?.title} | ${make_duration_str(info.video_details?.durationInSec * 1000)}`
-    );
+    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${info.video_details?.title}`);
     playingEmbed.setImage(`${info.video_details?.thumbnails[0].url}`);
     await textChannel.send({ embeds: [playingEmbed] });
     progressMessage = await textChannel.send(`...`);
@@ -199,7 +197,7 @@ async function play_song(song: playlist_entry, connection: VoiceConnection) {
 
     lastSongPlayed = song;
     currentSongDurationInSeconds = song.durationInSec;
-    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title} | ${song.durationInSec}`);
+    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`);
     playingEmbed.setImage(`${song.thumbUrl}`);
     await textChannel.send({ embeds: [playingEmbed] });
     progressMessage = await textChannel.send(`...`);
