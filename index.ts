@@ -33,6 +33,7 @@ client.once('disconnect', () => {
 let songList: playlist_entry[] = [];
 let curSong = 0;
 let isPlaying = false;
+let progSymbol = '⚪';
 
 const player = createAudioPlayer({
     behaviors: {
@@ -141,7 +142,7 @@ async function update_playback_time() {
             const pos = Math.floor(strLen * prog);
             for (let i = 0; i < strLen; ++i) {
                 if (i === pos) {
-                    str += '⚪';
+                    str += progSymbol;
                 } else {
                     str += '-';
                 }
@@ -340,6 +341,15 @@ client.on('messageCreate', async (msg) => {
                 }
                 curSong = (curSong - 1) % songList.length;
                 play_song(songList[curSong], voiceConnection);
+            }
+            break;
+        case 'setprogsymbol':
+            {
+                if (args.length < 0) {
+                    msg.reply(`usage: ${prefix}setprogsymbol <symbol>`);
+                    return;
+                }
+                progSymbol = args[0];
             }
             break;
         case 'add':
