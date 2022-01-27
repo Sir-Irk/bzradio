@@ -116,6 +116,8 @@ let currentSongDurationInSeconds = 0;
 let playingEmbed: Discord.MessageEmbed = null;
 let progressMessage: Discord.Message = null;
 let loopMode: boolean = false;
+let lastSongPlayed: ytpl.Item = null;
+let lastUrlPlayed: string = null;
 
 async function update_playback_time() {
     while (true) {
@@ -151,6 +153,8 @@ async function play_song_url(url: string, connection: VoiceConnection) {
         textChannel.send(`Error fetching url: ${url}`);
         return;
     }
+    lastSongPlayed = null;
+    lastUrlPlayed = url;
     currentSongDurationInSeconds = info.video_details.durationInSec;
     playingEmbed = new Discord.MessageEmbed().setTitle(
         `▶️ ${info.video_details?.title} | ${make_duration_str(info.video_details?.durationInSec * 1000)}`
@@ -175,6 +179,8 @@ async function play_song(song: ytpl.Item, connection: VoiceConnection) {
         textChannel.send(`Error fetching url: ${song.url}`);
         return;
     }
+    lastSongPlayed = song;
+    lastUrlPlayed = null;
     currentSongDurationInSeconds = song.durationSec;
     playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title} | ${song.duration}`);
     playingEmbed.setImage(`${song.bestThumbnail.url}`);
@@ -213,10 +219,17 @@ let voiceConnection: VoiceConnection = null;
 player.on(AudioPlayerStatus.Idle, () => {
     if (songList.length > 0) {
         if (loopMode) {
-            player.play(resource);
-            return;
+            if (lastSongPlayed) {
+                play_song(lastSongPlayed, voiceConnection);
+            } else if (lastUrlPlayed) {
+                play_song_url(lastUrlPlayed, voiceConnection);
+            } else {
+                textChannel.send(`Something went wrong with loop mode`);
+                play_song(get_next_song(), voiceConnection);
+            }
+        } else {
+            play_song(get_next_song(), voiceConnection);
         }
-        play_song(get_next_song(), voiceConnection);
     }
 });
 
