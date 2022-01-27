@@ -234,13 +234,11 @@ function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
             map.set(i.title, new playlist_entry(i.url, i.title, i.thumbUrl, i.durationInSec));
         }
     });
-    console.log(`${map.size}`);
     items.forEach((i) => {
         if (!map.has(i.title)) {
             map.set(i.title, new playlist_entry(i.url, i.title, i.bestThumbnail.url, i.durationSec));
         }
     });
-    console.log(`${map.size}`);
     songList = [];
     map.forEach((i) => {
         songList.push(i);
