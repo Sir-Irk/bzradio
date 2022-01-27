@@ -277,6 +277,10 @@ client.on('messageCreate', async (msg) => {
             break;
         case 'radio':
             {
+                if (songList.length > 0) {
+                    await start_playing(msg.member);
+                    return;
+                }
                 await load_playlist('PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA');
                 shuffle(songList);
                 await start_playing(msg.member);
