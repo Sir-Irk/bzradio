@@ -108,6 +108,7 @@ async function start_playing(member: Discord.GuildMember) {
 }
 
 let resource: AudioResource = null;
+let songPlaying: ytpl.Item = null;
 let playingEmbed: Discord.MessageEmbed = null;
 let progressMessage: Discord.Message = null;
 
@@ -125,7 +126,7 @@ async function update_playback_time() {
                     str += '-';
                 }
             }
-            str += `| ${make_duration_str(resource.playbackDuration)}/${make_duration_str(songList[curSong].durationSec * 1000)}`;
+            str += `| ${make_duration_str(resource.playbackDuration)}/${make_duration_str(songPlaying.durationSec * 1000)}`;
             progressMessage.edit(str);
         }
         await delay(2000);
@@ -140,6 +141,7 @@ async function play_song(song: ytpl.Item, connection: VoiceConnection) {
     });
     player.play(resource);
     connection.subscribe(player);
+    songPlaying = song;
     playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title} | ${song.duration}`);
     playingEmbed.setImage(`${song.bestThumbnail.url}`);
     await textChannel.send({ embeds: [playingEmbed] });
