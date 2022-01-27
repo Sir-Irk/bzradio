@@ -352,6 +352,15 @@ client.on('messageCreate', async (msg) => {
                 progSymbol = args[0];
             }
             break;
+        case 'link':
+            {
+                if (lastSongPlayed) {
+                    msg.reply(`${lastSongPlayed.title}: <${lastSongPlayed.url}>`);
+                } else {
+                    msg.reply(`No links to give. Have you played a song?`);
+                }
+            }
+            break;
         case 'add':
             {
                 if (args.length < 1) {
