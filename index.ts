@@ -133,7 +133,7 @@ async function update_playback_time() {
             str += `| ${make_duration_str(resource.playbackDuration)}/${make_duration_str(currentSongDurationInSeconds * 1000)}`;
             progressMessage.edit(str);
         }
-        await delay(2000);
+        await delay(1000);
     }
 }
 async function play_song_url(url: string, connection: VoiceConnection) {
