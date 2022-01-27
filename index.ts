@@ -75,7 +75,7 @@ function make_duration_str(miliseconds: number) {
 let textChannel: Discord.DMChannel = null;
 
 async function start_playing(member: Discord.GuildMember, url: string = null) {
-    if (songList.entries.length === 0 && !url) {
+    if (songList.length === 0 && !url) {
         textChannel.send('no songs in queue');
         return;
     }
@@ -252,7 +252,7 @@ async function load_playlist(url: string) {
                     cont = await ytpl.continueReq(cont.continuation);
                 }
             }
-            textChannel.send(`Done! Loaded ${songList.entries.length} songs`);
+            textChannel.send(`Done! Loaded ${songList.length} songs`);
         })
         .catch((e) => {
             textChannel.send(`Failed to fetch playist`);
@@ -267,7 +267,7 @@ function get_next_song(): playlist_entry {
 let voiceConnection: VoiceConnection = null;
 
 player.on(AudioPlayerStatus.Idle, () => {
-    if (songList.entries.length > 0) {
+    if (songList.length > 0) {
         if (loopMode) {
             if (lastSongPlayed) {
                 play_song(lastSongPlayed, voiceConnection);
