@@ -115,6 +115,7 @@ let resource: AudioResource = null;
 let currentSongDurationInSeconds = 0;
 let playingEmbed: Discord.MessageEmbed = null;
 let progressMessage: Discord.Message = null;
+let loopMode: boolean = false;
 
 async function update_playback_time() {
     while (true) {
@@ -211,6 +212,10 @@ let voiceConnection: VoiceConnection = null;
 
 player.on(AudioPlayerStatus.Idle, () => {
     if (songList.length > 0) {
+        if (loopMode) {
+            player.play(resource);
+            return;
+        }
         play_song(get_next_song(), voiceConnection);
     }
 });
@@ -240,6 +245,12 @@ client.on('messageCreate', async (msg) => {
                 }
                 shuffle(songList);
                 msg.reply(`song list shuffled`);
+            }
+            break;
+        case 'loop':
+            {
+                loopMode = !loopMode;
+                msg.reply(`Loop mode turned **${loopMode ? 'on' : 'off'}**`);
             }
             break;
         case 'next':
