@@ -256,7 +256,7 @@ async function load_playlist(url: string) {
             if (pl.continuation) {
                 let cont = await ytpl.continueReq(pl.continuation);
                 while (true) {
-                    add_playlist(songList, pl.items);
+                    add_playlist(songList, cont.items);
                     if (!cont.continuation) break;
                     cont = await ytpl.continueReq(cont.continuation);
                 }
