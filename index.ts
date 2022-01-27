@@ -74,8 +74,8 @@ function make_duration_str(miliseconds: number) {
 
 let textChannel: Discord.DMChannel = null;
 
-async function start_playing(member: Discord.GuildMember) {
-    if (songList.length === 0) {
+async function start_playing(member: Discord.GuildMember, url: string = null) {
+    if (songList.length === 0 && !url) {
         textChannel.send('no songs in queue');
         return;
     }
@@ -97,7 +97,11 @@ async function start_playing(member: Discord.GuildMember) {
         });
 
         if (voiceConnection) {
-            play_song(songList[curSong], voiceConnection);
+            if (url) {
+                play_song_url(url, voiceConnection);
+            } else {
+                play_song(songList[curSong], voiceConnection);
+            }
         } else {
             textChannel.send(`Failed to join voice channel`);
         }
@@ -108,15 +112,15 @@ async function start_playing(member: Discord.GuildMember) {
 }
 
 let resource: AudioResource = null;
-let songPlaying: ytpl.Item = null;
+let currentSongDurationInSeconds = 0;
 let playingEmbed: Discord.MessageEmbed = null;
 let progressMessage: Discord.Message = null;
 
 async function update_playback_time() {
     while (true) {
-        if (songList[curSong] && resource && progressMessage && !resource.ended) {
+        if (resource && progressMessage && !resource.ended) {
             let str = '▶️ ';
-            const prog = resource.playbackDuration / 1000 / songList[curSong].durationSec;
+            const prog = resource.playbackDuration / 1000 / currentSongDurationInSeconds;
             const strLen = 40;
             const pos = Math.floor(strLen * prog);
             for (let i = 0; i < strLen; ++i) {
@@ -126,22 +130,51 @@ async function update_playback_time() {
                     str += '-';
                 }
             }
-            str += `| ${make_duration_str(resource.playbackDuration)}/${make_duration_str(songPlaying.durationSec * 1000)}`;
+            str += `| ${make_duration_str(resource.playbackDuration)}/${make_duration_str(currentSongDurationInSeconds * 1000)}`;
             progressMessage.edit(str);
         }
         await delay(2000);
     }
 }
+async function play_song_url(url: string, connection: VoiceConnection) {
+    const info = await playDl.video_info(url);
+    let stream = null;
+    try {
+        stream = await playDl.stream(url);
+        resource = createAudioResource(stream.stream, {
+            inputType: stream.type,
+        });
+        player.play(resource);
+        connection.subscribe(player);
+    } catch (e) {
+        textChannel.send(`Error fetching url: ${url}`);
+        return;
+    }
+    currentSongDurationInSeconds = info.video_details.durationInSec;
+    playingEmbed = new Discord.MessageEmbed().setTitle(
+        `▶️ ${info.video_details?.title} | ${make_duration_str(info.video_details?.durationInSec * 1000)}`
+    );
+    playingEmbed.setImage(`${info.video_details?.thumbnails[0].url}`);
+    await textChannel.send({ embeds: [playingEmbed] });
+    progressMessage = await textChannel.send(`...`);
+    const status = player.state.status;
+}
 
 async function play_song(song: ytpl.Item, connection: VoiceConnection) {
     if (!connection) return;
-    const stream = await playDl.stream(song.url);
-    resource = createAudioResource(stream.stream, {
-        inputType: stream.type,
-    });
-    player.play(resource);
-    connection.subscribe(player);
-    songPlaying = song;
+    let stream = null;
+    try {
+        stream = await playDl.stream(song.url);
+        resource = createAudioResource(stream.stream, {
+            inputType: stream.type,
+        });
+        player.play(resource);
+        connection.subscribe(player);
+    } catch (e) {
+        textChannel.send(`Error fetching url: ${song.url}`);
+        return;
+    }
+    currentSongDurationInSeconds = song.durationSec;
     playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title} | ${song.duration}`);
     playingEmbed.setImage(`${song.bestThumbnail.url}`);
     await textChannel.send({ embeds: [playingEmbed] });
@@ -253,21 +286,30 @@ client.on('messageCreate', async (msg) => {
         case 'p':
             {
                 if (args.length > 0) {
-                    const matches = songList.filter((s) => {
-                        return s.title.toLowerCase().includes(args.join(' ').toLowerCase());
-                    });
-                    if (matches.length > 0) {
-                        if (matches.length === 1) {
-                            play_song(matches[0], voiceConnection);
+                    if (args[0].includes('https')) {
+                        if (!voiceConnection) {
+                            start_playing(msg.member, args[0]);
                         } else {
-                            let str = 'Matches: \n';
-                            matches.forEach((m) => {
-                                str += `${m.title}\n`;
-                            });
-                            msg.reply(str);
+                            play_song_url(args[0], voiceConnection);
                         }
+                        return;
                     } else {
-                        msg.reply("Couldn't find that song in the playlist");
+                        const matches = songList.filter((s) => {
+                            return s.title.toLowerCase().includes(args.join(' ').toLowerCase());
+                        });
+                        if (matches.length > 0) {
+                            if (matches.length === 1) {
+                                play_song(matches[0], voiceConnection);
+                            } else {
+                                let str = 'Matches: \n';
+                                matches.forEach((m) => {
+                                    str += `${m.title}\n`;
+                                });
+                                msg.reply(str);
+                            }
+                        } else {
+                            msg.reply("Couldn't find that song in the playlist");
+                        }
                     }
                 }
                 if (!voiceConnection) {
