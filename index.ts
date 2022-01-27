@@ -22,6 +22,7 @@ client.once('ready', () => {
     console.log('Ready!');
     update_playback_time();
 });
+
 client.once('reconnecting', () => {
     console.log('Reconnecting!');
 });
@@ -133,7 +134,7 @@ class playlist_entry {
 
 async function update_playback_time() {
     while (true) {
-        if (resource && progressMessage && !resource.ended) {
+        if (resource && progressMessage) {
             let str = '▶️ ';
             const prog = resource.playbackDuration / 1000 / currentSongDurationInSeconds;
             const strLen = 40;
