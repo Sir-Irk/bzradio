@@ -353,7 +353,7 @@ client.on('messageCreate', async (msg) => {
         case 'link':
             {
                 if (lastSongPlayed) {
-                    msg.reply(`$[{lastSongPlayed.title}](${lastSongPlayed.url})`);
+                    msg.reply(`[${lastSongPlayed.title}](${lastSongPlayed.url})`);
                 } else {
                     msg.reply(`No links to give. Have you played a song?`);
                 }
