@@ -481,10 +481,26 @@ client.on('messageCreate', async (msg) => {
                 msg.reply(str);
             }
             break;
+        case 'listq':
+            {
+                if (songTempQueue.length === 0) {
+                    msg.reply(`No songs in the queue`);
+                    return;
+                }
+
+                const listLen = Math.min(songTempQueue.length, 25);
+                let str = `**Songs in queue: ${songTempQueue.length}\n`;
+                for (let i = 0; i < listLen; ++i) {
+                    let idx = i;
+                    str += `${i}. **${songTempQueue[idx].title} | ${make_duration_str(songTempQueue[idx].durationInSec * 1000)}**\n`;
+                    str += `...and ${songTempQueue.length - listLen} more`;
+                }
+            }
+            break;
         case 'list':
             {
                 if (songList.length === 0) {
-                    msg.reply('No songs in the queue');
+                    msg.reply('No songs in the playlist');
                     return;
                 }
 
@@ -563,6 +579,7 @@ client.on('messageCreate', async (msg) => {
                 const matches = await find_matches(songList, args.join(' '));
                 if (matches.length === 1) {
                     songTempQueue.push(matches[0]);
+                    msg.reply(`Added to the queue: ${matches[0].title}\n${songTempQueue.length} songs in queue`);
                 } else {
                     print_matches(matches);
                 }
