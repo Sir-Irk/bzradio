@@ -448,7 +448,7 @@ client.on('messageCreate', async (msg) => {
                 }
 
                 const listLen = Math.min(songList.length, 25);
-                let str = `**Next ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed**`;
+                let str = `**Next ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed\n**`;
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = curSong - i;
                     if (idx < 0) {
