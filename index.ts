@@ -280,7 +280,7 @@ let voiceConnection: VoiceConnection = null;
 
 async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
     if (songs.length > 0) {
-        let str = `Matches found(${songs.length}): \n`;
+        let str = `**Matches found(${songs.length}):** \n\n`;
         const maxLen = 40;
         for (let i = 0; i < songs.length && i < maxLen; ++i) {
             str += `**${i + 1}.** ${songs[i].title}\n`;
