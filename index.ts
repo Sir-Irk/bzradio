@@ -492,7 +492,9 @@ client.on('messageCreate', async (msg) => {
                 let str = `**Songs in queue: ${songTempQueue.length}\n`;
                 for (let i = 0; i < listLen; ++i) {
                     let idx = i;
-                    str += `${i}. **${songTempQueue[idx].title} | ${make_duration_str(songTempQueue[idx].durationInSec * 1000)}**\n`;
+                    str += `${i + 1}. **${songTempQueue[idx].title} | ${make_duration_str(songTempQueue[idx].durationInSec * 1000)}**\n`;
+                }
+                if (songTempQueue.length > listLen) {
                     str += `...and ${songTempQueue.length - listLen} more`;
                 }
                 msg.reply(str);
