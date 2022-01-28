@@ -283,7 +283,7 @@ async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
         let str = `Matches found(${songs.length}): \n`;
         const maxLen = 40;
         for (let i = 0; i < songs.length && i < maxLen; ++i) {
-            str += `**${i}.** ${songs[i].title}\n`;
+            str += `**${i + 1}.** ${songs[i].title}\n`;
         }
         if (songs.length > maxLen) {
             str += `...and ${songs.length - maxLen} more`;
