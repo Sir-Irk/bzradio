@@ -1,7 +1,7 @@
 import { prefix, token } from './config.json';
 
 import * as Discord from 'discord.js';
-import playDl, { DeezerAlbum } from 'play-dl';
+import playDl, { DeezerAlbum, InfoData } from 'play-dl';
 import ytpl from 'ytpl';
 import {
     createAudioResource,
@@ -135,11 +135,13 @@ class playlist_entry {
     title: string = null;
     thumbUrl: string = null;
     durationInSec: number = 0;
-    constructor(url: string, title: string, thumbUrl: string, durationInSec: number) {
+    channel: string = null;
+    constructor(url: string, title: string, channel: string, thumbUrl: string, durationInSec: number) {
         this.url = url;
         this.title = title;
         this.thumbUrl = thumbUrl;
         this.durationInSec = durationInSec;
+        this.channel = channel;
     }
 }
 
@@ -164,7 +166,7 @@ async function update_playback_time() {
     }
 }
 async function play_song_url(url: string, connection: VoiceConnection) {
-    let info = null;
+    let info: InfoData = null;
     let stream = null;
     try {
         info = await playDl.video_info(url);
@@ -183,6 +185,7 @@ async function play_song_url(url: string, connection: VoiceConnection) {
     lastSongPlayed = new playlist_entry(
         url,
         info.video_details?.title,
+        info.video_details?.channel?.name,
         info.video_details.thumbnails[0].url,
         info.video_details.durationInSec
     );
@@ -232,7 +235,13 @@ async function add_url(list: playlist_entry[], url: string) {
         try {
             info = await playDl.video_info(url);
             list.push(
-                new playlist_entry(url, info.video_details.title, info.video_details.thumbnails[0].url, info.video_details.durationInSec)
+                new playlist_entry(
+                    url,
+                    info.video_details.title,
+                    info.video_details?.channel?.name,
+                    info.video_details.thumbnails[0].url,
+                    info.video_details.durationInSec
+                )
             );
             textChannel.send(`Song added`);
         } catch (e) {
@@ -244,7 +253,9 @@ async function add_url(list: playlist_entry[], url: string) {
 async function find_matches(songs: playlist_entry[], titleToFind: string): Promise<playlist_entry[]> {
     const title = titleToFind.toLowerCase();
     const matches = songs.filter((s) => {
-        return s.title.toLowerCase().includes(title);
+        const t = s.title.toLowerCase();
+        const c = s.channel.toLowerCase();
+        return t.includes(title) || c.includes(title);
     });
     return matches;
 }
@@ -253,12 +264,12 @@ function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
     const map = new Map<string, playlist_entry>();
     list.forEach((i) => {
         if (!map.has(i.title)) {
-            map.set(i.title, new playlist_entry(i.url, i.title, i.thumbUrl, i.durationInSec));
+            map.set(i.title, new playlist_entry(i.url, i.title, i.channel, i.thumbUrl, i.durationInSec));
         }
     });
     items.forEach((i) => {
         if (!map.has(i.title)) {
-            map.set(i.title, new playlist_entry(i.url, i.title, i.bestThumbnail.url, i.durationSec));
+            map.set(i.title, new playlist_entry(i.url, i.title, i.author.name, i.bestThumbnail.url, i.durationSec));
         }
     });
     songList = [];
