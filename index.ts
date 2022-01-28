@@ -489,7 +489,7 @@ client.on('messageCreate', async (msg) => {
                 }
 
                 const listLen = Math.min(songTempQueue.length, 25);
-                let str = `**Songs in queue: ${songTempQueue.length}\n`;
+                let str = `**Songs in queue: ${songTempQueue.length}**\n`;
                 for (let i = 0; i < listLen; ++i) {
                     let idx = i;
                     str += `${i + 1}. **${songTempQueue[idx].title} | ${make_duration_str(songTempQueue[idx].durationInSec * 1000)}**\n`;
@@ -525,11 +525,13 @@ client.on('messageCreate', async (msg) => {
             {
                 songList = [];
                 curSong = 0;
+                msg.reply(`Playlist cleared`);
             }
             break;
         case 'clearq':
             {
                 songTempQueue = [];
+                msg.reply(`Queue cleared`);
             }
             break;
         case 'radio':
