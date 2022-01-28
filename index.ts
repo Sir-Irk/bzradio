@@ -326,13 +326,26 @@ client.on('messageCreate', async (msg) => {
             }
             break;
         case 'next':
+        case 'n':
             {
                 if (songList.length === 0) {
                     msg.reply(`There are no songs in the playlist`);
                     return;
                 }
-                curSong = (curSong + 1) % songList.length;
-                play_song(songList[curSong], voiceConnection);
+
+                if (args.length > 0) {
+                    let num = parseInt(args[0]);
+                    if (num === NaN || num < 0) {
+                        msg.reply(`Invalid argument for <track number>. Input: ${num}`);
+                        return;
+                    }
+
+                    curSong = (curSong + num) % songList.length;
+                    play_song(songList[curSong], voiceConnection);
+                } else {
+                    curSong = (curSong + 1) % songList.length;
+                    play_song(songList[curSong], voiceConnection);
+                }
             }
             break;
         case 'prev':
@@ -347,7 +360,7 @@ client.on('messageCreate', async (msg) => {
             break;
         case 'setprogsymbol':
             {
-                if (args.length < 0) {
+                if (args.length < 1) {
                     msg.reply(`usage: ${prefix}setprogsymbol <symbol>`);
                     return;
                 }
@@ -377,6 +390,22 @@ client.on('messageCreate', async (msg) => {
             {
                 player.pause();
                 msg.reply('Paused');
+            }
+            break;
+        case 'list':
+            {
+                if (songList.length === 0) {
+                    msg.reply('No songs in the queue');
+                    return;
+                }
+
+                const listLen = Math.min(songList.length, 25);
+                let str = 'Next ${listLen} songs: Use ${prefix}next <track number> to play one of the songs listed\n';
+                for (let i = 0; i < listLen; ++i) {
+                    let idx = (curSong + i) % songList.length;
+                    str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec)}`;
+                }
+                msg.reply(str);
             }
             break;
         case 'clear':
