@@ -328,7 +328,7 @@ player.on(AudioPlayerStatus.Idle, () => {
             }
         } else {
             if (songTempQueue.length > 0) {
-                play_song(songTempQueue.pop(), voiceConnection);
+                play_song(songTempQueue.shift(), voiceConnection);
             } else {
                 play_song(get_next_song(), voiceConnection);
             }
@@ -389,7 +389,7 @@ client.on('messageCreate', async (msg) => {
                 } else {
                     curSong = (curSong + 1) % songList.length;
                     if (songTempQueue.length > 0) {
-                        play_song(songTempQueue.pop(), voiceConnection);
+                        play_song(songTempQueue.shift(), voiceConnection);
                     } else {
                         play_song(songList[curSong], voiceConnection);
                     }
