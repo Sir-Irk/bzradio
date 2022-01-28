@@ -401,7 +401,7 @@ client.on('messageCreate', async (msg) => {
 
                 const listLen = Math.min(songList.length, 25);
                 let str = `**Next ${listLen} songs: Use ${prefix}next <track number> to play one of the songs listed**\n`;
-                for (let i = 0; i < listLen; ++i) {
+                for (let i = 1; i <= listLen; ++i) {
                     let idx = (curSong + i) % songList.length;
                     str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
                 }
