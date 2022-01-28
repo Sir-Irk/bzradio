@@ -280,10 +280,10 @@ let voiceConnection: VoiceConnection = null;
 
 async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
     if (songs.length > 0) {
-        let str = 'Matches: \n';
+        let str = `Matches found(${songs.length}): \n`;
         const maxLen = 40;
         for (let i = 0; i < songs.length && i < maxLen; ++i) {
-            str += `${songs[i].title}\n`;
+            str += `**${i}.** ${songs[i].title}\n`;
         }
         if (songs.length > maxLen) {
             str += `...and ${songs.length - maxLen} more`;
@@ -450,7 +450,7 @@ client.on('messageCreate', async (msg) => {
                     if (idx < 0) {
                         idx += songList.length;
                     }
-                    str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
+                    str += `**${i}.** ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
                 }
                 msg.reply(str);
             }
@@ -466,7 +466,7 @@ client.on('messageCreate', async (msg) => {
                 let str = `**Next ${listLen} songs: Use ${prefix}next <track number> to play one of the songs listed\n**`;
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = (curSong + i) % songList.length;
-                    str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
+                    str += `**${i}.** ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
                 }
                 msg.reply(str);
             }
