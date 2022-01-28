@@ -35,6 +35,15 @@ let songTempQueue: playlist_entry[] = [];
 let curSong = 0;
 let isPlaying = false;
 let progSymbol = '⚪';
+let voiceConnection: VoiceConnection = null;
+
+function next_song_index(): number {
+    return (curSong + 1) % songList.length;
+}
+
+function get_next_song(): playlist_entry {
+    return songList[next_song_index()];
+}
 
 const player = createAudioPlayer({
     behaviors: {
@@ -165,6 +174,19 @@ async function update_playback_time() {
         await delay(2000);
     }
 }
+
+async function display_player(song: playlist_entry) {
+    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`);
+    playingEmbed.setImage(`${song.thumbUrl}`);
+    if (songTempQueue.length > 0) {
+        playingEmbed.addFields({ name: `Up next`, value: `**${songTempQueue[0].title}**` });
+    } else if (songList.length > 0) {
+        playingEmbed.addFields({ name: `Up next`, value: `**${songList[next_song_index()].title}**` });
+    }
+    await textChannel.send({ embeds: [playingEmbed] });
+    progressMessage = await textChannel.send(`...`);
+}
+
 async function play_song_url(url: string, connection: VoiceConnection) {
     let info: InfoData = null;
     let stream = null;
@@ -190,9 +212,7 @@ async function play_song_url(url: string, connection: VoiceConnection) {
         info.video_details.durationInSec
     );
     currentSongDurationInSeconds = info.video_details.durationInSec;
-    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${info.video_details?.title}`);
-    playingEmbed.setImage(`${info.video_details?.thumbnails[0].url}`);
-    await textChannel.send({ embeds: [playingEmbed] });
+    display_player(lastSongPlayed);
     progressMessage = await textChannel.send(`...`);
     const status = player.state.status;
 }
@@ -215,11 +235,8 @@ async function play_song(song: playlist_entry, connection: VoiceConnection) {
     }
 
     lastSongPlayed = song;
+    display_player(song);
     currentSongDurationInSeconds = song.durationInSec;
-    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`);
-    playingEmbed.setImage(`${song.thumbUrl}`);
-    await textChannel.send({ embeds: [playingEmbed] });
-    progressMessage = await textChannel.send(`...`);
     const status = player.state.status;
 }
 
@@ -305,8 +322,6 @@ async function load_playlist(url: string) {
         });
 }
 
-let voiceConnection: VoiceConnection = null;
-
 async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
     if (songs.length > 0) {
         let str = `**Matches found(${songs.length}):** \n\n`;
@@ -321,11 +336,6 @@ async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
     } else {
         textChannel.send("Couldn't find that song in the playlist");
     }
-}
-
-function get_next_song(): playlist_entry {
-    curSong = (curSong + 1) % songList.length;
-    return songList[curSong];
 }
 
 player.on(AudioPlayerStatus.Idle, () => {
@@ -609,6 +619,11 @@ client.on('messageCreate', async (msg) => {
                     break;
                 }
                 await load_playlist(args[0]);
+            }
+            break;
+        case 'player':
+            {
+                if (lastSongPlayed) display_player(lastSongPlayed);
             }
             break;
         default: {
