@@ -444,13 +444,13 @@ client.on('messageCreate', async (msg) => {
                 }
 
                 const listLen = Math.min(songList.length, 25);
-                let str = `**Next ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed\n**`;
+                let str = `**Next ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed**\n`;
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = curSong - i;
                     if (idx < 0) {
                         idx += songList.length;
                     }
-                    str += `**${i}.** ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
+                    str += `${i}. **${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}**\n`;
                 }
                 msg.reply(str);
             }
