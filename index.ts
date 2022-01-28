@@ -230,7 +230,13 @@ async function add_url(list: playlist_entry[], url: string) {
         }
     }
 }
-
+async function find_matches(songs: playlist_entry[], titleToFind: string): Promise<playlist_entry[]> {
+    const title = titleToFind.toLowerCase();
+    const matches = songs.filter((s) => {
+        return s.title.toLowerCase().includes(title);
+    });
+    return matches;
+}
 function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
     const map = new Map<string, playlist_entry>();
     list.forEach((i) => {
@@ -270,12 +276,32 @@ async function load_playlist(url: string) {
         });
 }
 
+let voiceConnection: VoiceConnection = null;
+
+async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
+    if (songs.length > 0) {
+        if (songs.length === 1) {
+            play_song(songs[0], voiceConnection);
+        } else {
+            let str = 'Matches: \n';
+            const maxLen = 40;
+            for (let i = 0; i < songs.length && i < maxLen; ++i) {
+                str += `${songs[i].title}\n`;
+            }
+            if (songs.length > maxLen) {
+                str += `...and ${songs.length - maxLen} more`;
+            }
+            textChannel.send(str);
+        }
+    } else {
+        textChannel.send("Couldn't find that song in the playlist");
+    }
+}
+
 function get_next_song(): playlist_entry {
     curSong = (curSong + 1) % songList.length;
     return songList[curSong];
 }
-
-let voiceConnection: VoiceConnection = null;
 
 player.on(AudioPlayerStatus.Idle, () => {
     if (songList.length > 0) {
@@ -354,14 +380,30 @@ client.on('messageCreate', async (msg) => {
                     msg.reply(`There are no songs in the playlist`);
                     return;
                 }
-                curSong = (curSong - 1) % songList.length;
-                play_song(songList[curSong], voiceConnection);
+
+                if (args.length > 0) {
+                    let num = parseInt(args[0]);
+                    if (num === NaN || num < 0) {
+                        msg.reply(`Invalid argument for <track number>. Input: ${num}`);
+                        return;
+                    }
+                    let idx = curSong - num;
+                    if (idx < 0) idx += songList.length;
+                    curSong = idx;
+                    play_song(songList[curSong], voiceConnection);
+                } else {
+                    let idx = curSong - 1;
+                    if (idx < 0) idx += songList.length;
+                    curSong = idx;
+                    play_song(songList[curSong], voiceConnection);
+                }
             }
             break;
         case 'setprogsymbol':
+        case 'setps':
             {
                 if (args.length < 1) {
-                    msg.reply(`usage: ${prefix}setprogsymbol <symbol>`);
+                    msg.reply(`usage: ${prefix}setps <symbol>`);
                     return;
                 }
                 progSymbol = args[0];
@@ -376,6 +418,11 @@ client.on('messageCreate', async (msg) => {
                 }
             }
             break;
+        case 'find':
+            {
+                print_matches(await find_matches(songList, args.join(' ')));
+            }
+            break;
         case 'add':
             {
                 if (args.length < 1) {
@@ -386,10 +433,30 @@ client.on('messageCreate', async (msg) => {
                 await add_url(songList, args[0]);
             }
             break;
+        case 'stop':
         case 'pause':
             {
                 player.pause();
                 msg.reply('Paused');
+            }
+            break;
+        case 'listp':
+            {
+                if (songList.length === 0) {
+                    msg.reply('No songs in the queue');
+                    return;
+                }
+
+                const listLen = Math.min(songList.length, 25);
+                let str = `**Next ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed`;
+                for (let i = 1; i <= listLen; ++i) {
+                    let idx = curSong - i;
+                    if (idx < 0) {
+                        idx = songList.length - 1;
+                    }
+                    str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
+                }
+                msg.reply(str);
             }
             break;
         case 'list':
@@ -400,7 +467,7 @@ client.on('messageCreate', async (msg) => {
                 }
 
                 const listLen = Math.min(songList.length, 25);
-                let str = `**Next ${listLen} songs: Use ${prefix}next <track number> to play one of the songs listed**\n`;
+                let str = `**Next ${listLen} songs: Use ${prefix}next <track number> to play one of the songs listed`;
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = (curSong + i) % songList.length;
                     str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
@@ -438,25 +505,11 @@ client.on('messageCreate', async (msg) => {
                         }
                         return;
                     } else {
-                        const matches = songList.filter((s) => {
-                            return s.title.toLowerCase().includes(args.join(' ').toLowerCase());
-                        });
-                        if (matches.length > 0) {
-                            if (matches.length === 1) {
-                                play_song(matches[0], voiceConnection);
-                            } else {
-                                let str = 'Matches: \n';
-                                const maxLen = 40;
-                                for (let i = 0; i < matches.length && i < maxLen; ++i) {
-                                    str += `${matches[i].title}\n`;
-                                }
-                                if (matches.length > maxLen) {
-                                    str += `...and ${matches.length - maxLen} more`;
-                                }
-                                msg.reply(str);
-                            }
+                        const matches = await find_matches(songList, args.join(' '));
+                        if (matches.length === 1) {
+                            play_song(matches[0], voiceConnection);
                         } else {
-                            msg.reply("Couldn't find that song in the playlist");
+                            print_matches(matches);
                         }
                     }
                 }
