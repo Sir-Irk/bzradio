@@ -58,6 +58,15 @@ process.on('uncaughtException', async function (err: Error) {
     process.abort();
 });
 
+function make_duration_hour_str(ms: number) {
+    let seconds = ms / 1000;
+    const hours = Math.floor(seconds / 3600); // 3,600 seconds in 1 hour
+    seconds = seconds % 3600; // seconds remaining after extracting hours
+    const minutes = Math.floor(seconds / 60); // 60 seconds in 1 minute
+    seconds = seconds % 60;
+    return `${hours}h : ${minutes}m : ${seconds}s`;
+}
+
 function make_duration_str(miliseconds: number) {
     let remainder = miliseconds - Math.floor(miliseconds / 1000 / 60) * 1000 * 60;
     let min = Math.floor(miliseconds / 1000 / 60);
@@ -269,7 +278,13 @@ async function load_playlist(url: string) {
                     cont = await ytpl.continueReq(cont.continuation);
                 }
             }
-            textChannel.send(`Done! Loaded ${songList.length} songs`);
+            let durationSum = 0;
+            songList.forEach((s) => {
+                durationSum += s.durationInSec * 1000;
+            });
+            textChannel.send(
+                `Done! Loaded ${songList.length} songs for a total playtime duration of ${make_duration_hour_str(durationSum)}`
+            );
         })
         .catch((e) => {
             textChannel.send(`Failed to fetch playist`);
@@ -444,7 +459,7 @@ client.on('messageCreate', async (msg) => {
                 }
 
                 const listLen = Math.min(songList.length, 25);
-                let str = `**Next ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed**\n`;
+                let str = `**Prev ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed**\n`;
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = curSong - i;
                     if (idx < 0) {
