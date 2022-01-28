@@ -495,6 +495,7 @@ client.on('messageCreate', async (msg) => {
                     str += `${i}. **${songTempQueue[idx].title} | ${make_duration_str(songTempQueue[idx].durationInSec * 1000)}**\n`;
                     str += `...and ${songTempQueue.length - listLen} more`;
                 }
+                msg.reply(str);
             }
             break;
         case 'list':
