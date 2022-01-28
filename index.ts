@@ -272,7 +272,7 @@ async function add_url(list: playlist_entry[], url: string) {
 async function find_matches(songs: playlist_entry[], titleToFind: string): Promise<playlist_entry[]> {
     const title = titleToFind.toLowerCase();
     const matches = songs.filter((s) => {
-        const t = s.title.toLowerCase();
+        const t = s.title.replace(/\s+/g, ' ').trim().toLowerCase();
         const c = s.channel.toLowerCase();
         return t.includes(title) || c.includes(title);
     });
