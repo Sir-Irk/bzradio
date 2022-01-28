@@ -280,15 +280,17 @@ let voiceConnection: VoiceConnection = null;
 
 async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
     if (songs.length > 0) {
+        const embed = new Discord.MessageEmbed().setTitle(`Song Matches`);
         let str = `**Matches found(${songs.length}):** \n\n`;
-        const maxLen = 40;
+        const maxLen = listLimit;
         for (let i = 0; i < songs.length && i < maxLen; ++i) {
-            str += `**${i + 1}.** ${songs[i].title}\n`;
+            str += `${songs[i].title}\n`;
         }
         if (songs.length > maxLen) {
             str += `...and ${songs.length - maxLen} more`;
         }
-        textChannel.send(str);
+        embed.addFields({ name: `Found ${songs.length} Songs`, value: `\`\`\`${str}\`\`\`` });
+        textChannel.send({ embeds: [embed] });
     } else {
         textChannel.send("Couldn't find that song in the playlist");
     }
