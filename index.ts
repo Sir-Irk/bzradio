@@ -403,7 +403,7 @@ client.on('messageCreate', async (msg) => {
                 let str = `Next ${listLen} songs: Use ${prefix}next <track number> to play one of the songs listed\n`;
                 for (let i = 0; i < listLen; ++i) {
                     let idx = (curSong + i) % songList.length;
-                    str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec)}\n`;
+                    str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
                 }
                 msg.reply(str);
             }
