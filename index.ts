@@ -280,19 +280,15 @@ let voiceConnection: VoiceConnection = null;
 
 async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
     if (songs.length > 0) {
-        if (songs.length === 1) {
-            play_song(songs[0], voiceConnection);
-        } else {
-            let str = 'Matches: \n';
-            const maxLen = 40;
-            for (let i = 0; i < songs.length && i < maxLen; ++i) {
-                str += `${songs[i].title}\n`;
-            }
-            if (songs.length > maxLen) {
-                str += `...and ${songs.length - maxLen} more`;
-            }
-            textChannel.send(str);
+        let str = 'Matches: \n';
+        const maxLen = 40;
+        for (let i = 0; i < songs.length && i < maxLen; ++i) {
+            str += `${songs[i].title}\n`;
         }
+        if (songs.length > maxLen) {
+            str += `...and ${songs.length - maxLen} more`;
+        }
+        textChannel.send(str);
     } else {
         textChannel.send("Couldn't find that song in the playlist");
     }
