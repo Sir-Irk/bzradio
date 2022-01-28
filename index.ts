@@ -278,7 +278,7 @@ async function load_playlist(url: string) {
 
 let voiceConnection: VoiceConnection = null;
 
-async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
+async function print_matches(songs: playlist_entry[], listLimit: number = 25) {
     if (songs.length > 0) {
         const embed = new Discord.MessageEmbed().setTitle(`Song Matches`);
         let str = `**Matches found(${songs.length}):** \n\n`;
