@@ -31,6 +31,7 @@ client.once('disconnect', () => {
 });
 
 let songList: playlist_entry[] = [];
+let songTempQueue: playlist_entry[] = [];
 let curSong = 0;
 let isPlaying = false;
 let progSymbol = '⚪';
@@ -239,6 +240,7 @@ async function add_url(list: playlist_entry[], url: string) {
         }
     }
 }
+
 async function find_matches(songs: playlist_entry[], titleToFind: string): Promise<playlist_entry[]> {
     const title = titleToFind.toLowerCase();
     const matches = songs.filter((s) => {
@@ -246,6 +248,7 @@ async function find_matches(songs: playlist_entry[], titleToFind: string): Promi
     });
     return matches;
 }
+
 function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
     const map = new Map<string, playlist_entry>();
     list.forEach((i) => {
@@ -324,7 +327,11 @@ player.on(AudioPlayerStatus.Idle, () => {
                 play_song(get_next_song(), voiceConnection);
             }
         } else {
-            play_song(get_next_song(), voiceConnection);
+            if (songTempQueue.length > 0) {
+                play_song(songTempQueue.pop(), voiceConnection);
+            } else {
+                play_song(get_next_song(), voiceConnection);
+            }
         }
     }
 });
@@ -381,7 +388,11 @@ client.on('messageCreate', async (msg) => {
                     play_song(songList[curSong], voiceConnection);
                 } else {
                     curSong = (curSong + 1) % songList.length;
-                    play_song(songList[curSong], voiceConnection);
+                    if (songTempQueue.length > 0) {
+                        play_song(songTempQueue.pop(), voiceConnection);
+                    } else {
+                        play_song(songList[curSong], voiceConnection);
+                    }
                 }
             }
             break;
@@ -488,9 +499,18 @@ client.on('messageCreate', async (msg) => {
             break;
         case 'clear':
             {
+                msg.reply(`Use ${prefix}clearP to clear the playlist.\nUse ${prefix}clearQ to clear the temporary queue`);
+            }
+            break;
+        case 'clearp':
+            {
                 songList = [];
                 curSong = 0;
-                msg.reply('Playlist has been cleared');
+            }
+            break;
+        case 'clearq':
+            {
+                songTempQueue = [];
             }
             break;
         case 'radio':
@@ -534,11 +554,25 @@ client.on('messageCreate', async (msg) => {
 
         case 'q':
         case 'queue':
+            {
+                if (args.length < 1) {
+                    msg.reply(`Usage: ${prefix}q <song name>`);
+                    break;
+                }
+
+                const matches = await find_matches(songList, args.join(' '));
+                if (matches.length === 1) {
+                    songTempQueue.push(matches[0]);
+                } else {
+                    print_matches(matches);
+                }
+            }
+            break;
         case 'pl':
         case 'playlist':
             {
                 if (args.length < 1) {
-                    msg.reply(`Usage: ${prefix}q <youtube playlist>`);
+                    msg.reply(`Usage: ${prefix}pl <youtube playlist>`);
                     break;
                 }
                 await load_playlist(args[0]);
