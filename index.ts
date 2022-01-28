@@ -43,7 +43,8 @@ function next_song_index(): number {
 }
 
 function get_next_song(): playlist_entry {
-    return songList[next_song_index()];
+    curSong = next_song_index();
+    return songList[curSong];
 }
 
 const player = createAudioPlayer({
@@ -452,7 +453,7 @@ client.on('messageCreate', async (msg) => {
                     msg.reply(`usage: ${prefix}setps <symbol>`);
                     return;
                 }
-                progSymbol = args[0];
+                progSymbol = args.join(' ');
             }
             break;
         case 'link':
