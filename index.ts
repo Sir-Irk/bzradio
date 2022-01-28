@@ -452,7 +452,7 @@ client.on('messageCreate', async (msg) => {
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = curSong - i;
                     if (idx < 0) {
-                        idx = songList.length - 1;
+                        idx += songList.length;
                     }
                     str += `${i}. ${songList[idx].title} | ${make_duration_str(songList[idx].durationInSec * 1000)}\n`;
                 }
