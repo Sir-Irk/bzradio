@@ -35,6 +35,7 @@ let songTempQueue: playlist_entry[] = [];
 let curSong = 0;
 let isPlaying = false;
 let progSymbol = '⚪';
+let loadingSymbol = '<a:loading:936525608404545566>';
 let voiceConnection: VoiceConnection = null;
 
 function next_song_index(): number {
@@ -184,7 +185,7 @@ async function display_player(song: playlist_entry) {
         playingEmbed.addFields({ name: `Up next`, value: `**${songList[next_song_index()].title}**` });
     }
     await textChannel.send({ embeds: [playingEmbed] });
-    progressMessage = await textChannel.send(`...`);
+    progressMessage = await textChannel.send(`${loadingSymbol}`);
 }
 
 async function play_song_url(url: string, connection: VoiceConnection) {
@@ -298,7 +299,8 @@ function add_playlist(list: playlist_entry[], items: ytpl.Item[]) {
 async function load_playlist(url: string) {
     await ytpl(url, { pages: 1 })
         .then(async (pl) => {
-            textChannel.send('Fetching playlist. This may take a bit');
+            await textChannel.send('Fetching playlist. This may take a bit');
+            let msgRef = await textChannel.send(`${loadingSymbol}`);
             add_playlist(songList, pl.items);
 
             if (pl.continuation) {
@@ -313,8 +315,8 @@ async function load_playlist(url: string) {
             songList.forEach((s) => {
                 durationSum += s.durationInSec * 1000;
             });
-            textChannel.send(
-                `Done! Loaded ${songList.length} songs for a total playtime duration of ${make_duration_hour_str(durationSum)}`
+            msgRef.edit(
+                `Done! Loaded **${songList.length}** songs for a total playtime duration of **${make_duration_hour_str(durationSum)}**`
             );
         })
         .catch((e) => {
@@ -322,12 +324,13 @@ async function load_playlist(url: string) {
         });
 }
 
-async function print_matches(songs: playlist_entry[], listLimit: number = 40) {
+async function print_matches(songs: playlist_entry[], page: number = 1, listLimit: number = 40) {
     if (songs.length > 0) {
         let str = `**Matches found(${songs.length}):** \n\n`;
-        const maxLen = 40;
+        const maxLen = listLimit;
+        //const startIdx = (songs.length / maxLen) *;
         for (let i = 0; i < songs.length && i < maxLen; ++i) {
-            str += `${songs[i].title}\n`;
+            str += `${songs[i].title} | ${songs[i]?.channel}\n`;
         }
         if (songs.length > maxLen) {
             str += `...and ${songs.length - maxLen} more`;
