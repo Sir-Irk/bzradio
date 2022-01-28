@@ -1,7 +1,7 @@
 import { prefix, token } from './config.json';
 
 import * as Discord from 'discord.js';
-import playDl from 'play-dl';
+import playDl, { DeezerAlbum } from 'play-dl';
 import ytpl from 'ytpl';
 import {
     createAudioResource,
@@ -166,6 +166,8 @@ async function play_song_url(url: string, connection: VoiceConnection) {
         connection.subscribe(player);
     } catch (e) {
         textChannel.send(`Error fetching url: ${url}`);
+        await delay(1000);
+        play_song(get_next_song(), connection);
         return;
     }
     lastSongPlayed = new playlist_entry(
@@ -194,6 +196,8 @@ async function play_song(song: playlist_entry, connection: VoiceConnection) {
         connection.subscribe(player);
     } catch (e) {
         textChannel.send(`Error fetching url: ${song.url}`);
+        await delay(1000);
+        play_song(get_next_song(), connection);
         return;
     }
 
