@@ -16,6 +16,8 @@ const client: Discord.Client = new Discord.Client({ intents: ['GUILDS', 'GUILD_M
 
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const DEBUG_MODE: boolean = false;
+
 client.login(token);
 
 client.once('ready', () => {
@@ -185,13 +187,13 @@ async function update_playback_time() {
 }
 
 async function display_player(song: playlist_entry) {
-    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`);
+    playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`).setURL(`${song.url})`);
     playingEmbed.setImage(`${song.thumbUrl}`);
-    if (songTempQueue.length > 0) {
-        playingEmbed.addFields({ name: `Up next`, value: `**${songTempQueue[0].title}**` });
-    } else if (songList.length > 0) {
-        playingEmbed.addFields({ name: `Up next`, value: `**${songList[next_song_index()].title}**` });
+    if (songTempQueue.length > 0 || songList.length > 1) {
+        const nextSong = songTempQueue.length > 0 ? songTempQueue[0] : songList[next_song_index()];
+        playingEmbed.setFooter({ text: `Up next: ${nextSong.title}`, iconURL: `${nextSong.thumbUrl}` });
     }
+
     await textChannel.send({ embeds: [playingEmbed] });
     progressMessage = await textChannel.send(`${loadingSymbol}`);
 }
@@ -370,6 +372,9 @@ player.on(AudioPlayerStatus.Idle, () => {
 
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot) return;
+    if (DEBUG_MODE && msg.guildId !== `922243045787852890`) {
+        return;
+    }
     if (!msg.content.startsWith(prefix)) return;
 
     textChannel = msg.channel as Discord.DMChannel;
@@ -428,7 +433,8 @@ client.on('messageCreate', async (msg) => {
                 }
             }
             break;
-        case 'prev':
+        case 'back':
+        case 'b':
             {
                 if (songList.length === 0) {
                     msg.reply(`There are no songs in the playlist`);
@@ -502,7 +508,7 @@ client.on('messageCreate', async (msg) => {
                 }
 
                 const listLen = Math.min(songList.length, 25);
-                let str = `**Prev ${listLen} songs: Use ${prefix}prev <track number> to play one of the songs listed**\n`;
+                let str = `**Previous ${listLen} songs: Use ${prefix}back <track number> to play one of the songs listed**\n`;
                 for (let i = 1; i <= listLen; ++i) {
                     let idx = curSong - i;
                     if (idx < 0) {
