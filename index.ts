@@ -16,7 +16,7 @@ const client: Discord.Client = new Discord.Client({ intents: ['GUILDS', 'GUILD_M
 
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const DEBUG_MODE: boolean = false;
+const DEBUG_MODE: boolean = true;
 
 client.login(token);
 
@@ -176,10 +176,10 @@ async function update_playback_time() {
             await progressMessage.edit(str);
         } else {
             if (!resource) {
-                console.log('resource is null');
+                //console.log('resource is null');
             }
             if (!progressMessage) {
-                console.log('prog message is null');
+                //console.log('prog message is null');
             }
         }
         await delay(2000);
@@ -198,34 +198,48 @@ async function display_player(song: playlist_entry) {
     progressMessage = await textChannel.send(`${loadingSymbol}`);
 }
 
-async function play_song_url(url: string, connection: VoiceConnection) {
-    let info: InfoData = null;
-    let stream = null;
+async function make_playlist_entry_from_url(url: string) {
     try {
-        info = await playDl.video_info(url);
-        stream = await playDl.stream(url);
-        resource = createAudioResource(stream.stream, {
-            inputType: stream.type,
-        });
-        player.play(resource);
-        connection.subscribe(player);
+        const info = await playDl.video_info(url);
+        const result = new playlist_entry(
+            url,
+            info.video_details?.title,
+            info.video_details?.channel?.name,
+            info.video_details.thumbnails[0].url,
+            info.video_details.durationInSec
+        );
+        return result;
     } catch (e) {
-        textChannel.send(`Error fetching url: ${url}`);
-        await delay(1000);
-        play_song(get_next_song(), connection);
-        return;
+        throw e;
     }
-    lastSongPlayed = new playlist_entry(
-        url,
-        info.video_details?.title,
-        info.video_details?.channel?.name,
-        info.video_details.thumbnails[0].url,
-        info.video_details.durationInSec
-    );
-    currentSongDurationInSeconds = info.video_details.durationInSec;
-    display_player(lastSongPlayed);
-    progressMessage = await textChannel.send(`...`);
-    const status = player.state.status;
+}
+
+async function queue_song(queue: playlist_entry[], song: playlist_entry, msg: Discord.Message) {
+    queue.push(song);
+    msg.reply(`Added to the queue: ${song.title}\n${queue.length} songs in queue`);
+}
+
+async function queue_song_url(queue: playlist_entry[], url: string, connection: VoiceConnection, msg: Discord.Message) {
+    let result = null;
+    await make_playlist_entry_from_url(url)
+        .then((s) => {
+            queue_song(queue, s, msg);
+        })
+        .catch((error) => {
+            msg.reply(`Something went wrong fetching that url`);
+        });
+}
+
+async function play_song_url(url: string, connection: VoiceConnection) {
+    await make_playlist_entry_from_url(url)
+        .then((s) => {
+            lastSongPlayed = s;
+            currentSongDurationInSeconds = s.durationInSec;
+            play_song(s, connection);
+        })
+        .catch((error) => {
+            textChannel.send(`Something went wrong fetching that url`);
+        });
 }
 
 async function play_song(song: playlist_entry, connection: VoiceConnection) {
@@ -587,15 +601,16 @@ client.on('messageCreate', async (msg) => {
         case 'p':
             {
                 if (args.length > 0) {
-                    if (args[0].includes('https')) {
+                    const arg = args[0].trim();
+                    if (arg.startsWith('https')) {
                         if (!voiceConnection) {
-                            start_playing(msg.member, args[0]);
+                            start_playing(msg.member, arg);
                         } else {
-                            play_song_url(args[0], voiceConnection);
+                            play_song_url(arg, voiceConnection);
                         }
                         return;
                     } else {
-                        const matches = await find_matches(songList, args.join(' '));
+                        const matches = await find_matches(songList, args.join(' ').trim());
                         if (matches.length === 1) {
                             play_song(matches[0], voiceConnection);
                         } else {
@@ -615,11 +630,27 @@ client.on('messageCreate', async (msg) => {
         case 'queue':
             {
                 if (args.length < 1) {
-                    msg.reply(`Usage: ${prefix}q <song name>`);
+                    msg.reply(`Usage: ${prefix}q <song name>/<youtube url>/<song number>`);
                     break;
                 }
+                const arg = args[0].trim();
+                if (arg.startsWith('https')) {
+                    await queue_song_url(songTempQueue, arg, voiceConnection, msg);
+                    return;
+                }
 
-                const matches = await find_matches(songList, args.join(' '));
+                const num = parseInt(arg);
+                if (!isNaN(num)) {
+                    let idx = curSong + num;
+                    if (idx < 0) {
+                        idx += songList.length;
+                    }
+                    idx %= songList.length;
+                    queue_song(songTempQueue, songList[idx], msg);
+                    return;
+                }
+
+                const matches = await find_matches(songList, args.join(' ').trim());
                 if (matches.length === 1) {
                     songTempQueue.push(matches[0]);
                     msg.reply(`Added to the queue: ${matches[0].title}\n${songTempQueue.length} songs in queue`);
