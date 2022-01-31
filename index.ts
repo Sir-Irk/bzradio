@@ -16,7 +16,7 @@ const client: Discord.Client = new Discord.Client({ intents: ['GUILDS', 'GUILD_M
 
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const DEBUG_MODE: boolean = true;
+const DEBUG_MODE: boolean = false;
 
 client.login(token);
 
