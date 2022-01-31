@@ -171,7 +171,14 @@ async function update_playback_time() {
                 }
             }
             str += `| ${make_duration_str(resource.playbackDuration)}/${make_duration_str(currentSongDurationInSeconds * 1000)}`;
-            progressMessage.edit(str);
+            await progressMessage.edit(str);
+        } else {
+            if (!resource) {
+                console.log('resource is null');
+            }
+            if (!progressMessage) {
+                console.log('prog message is null');
+            }
         }
         await delay(2000);
     }
@@ -316,7 +323,7 @@ async function load_playlist(url: string) {
             songList.forEach((s) => {
                 durationSum += s.durationInSec * 1000;
             });
-            msgRef.edit(
+            await msgRef.edit(
                 `Done! Loaded **${songList.length}** songs for a total playtime duration of **${make_duration_hour_str(durationSum)}**`
             );
         })
