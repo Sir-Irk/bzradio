@@ -494,6 +494,10 @@ client.on('messageCreate', async (msg) => {
             break;
         case 'find':
             {
+                if (args.length < 1) {
+                    msg.reply(`Usage: ${prefix}find <title>`);
+                    return;
+                }
                 print_matches(await find_matches(songList, args.join(' ')));
             }
             break;
