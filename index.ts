@@ -359,7 +359,7 @@ async function print_matches(songs: playlist_entry[], page: number = 1, listLimi
         const maxLen = listLimit;
         //const startIdx = (songs.length / maxLen) *;
         for (let i = 0; i < songs.length && i < maxLen; ++i) {
-            str += `${songs[i].title} | ${songs[i]?.channel}\n`;
+            str += `${songs[i].title}\n`;
         }
         if (songs.length > maxLen) {
             str += `...and ${songs.length - maxLen} more`;
@@ -503,7 +503,10 @@ client.on('messageCreate', async (msg) => {
                     msg.reply(`Usage: ${prefix}find <title>`);
                     return;
                 }
-                print_matches(await find_matches(songList, args.join(' ')));
+                const matches = await find_matches(songList, args.join(' '));
+                print_matches(matches).catch((e) => {
+                    msg.reply(`Fuck my tight little ass: ${e.trace}`);
+                });
             }
             break;
         case 'add':
