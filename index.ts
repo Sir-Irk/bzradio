@@ -204,35 +204,33 @@ async function find_matches(guild: user_guild, songs: playlist_entry[], titleToF
     return [];
 }
 
-function add_playlist(guild: user_guild, list: playlist_entry[], items: ytpl.Item[]) {
-    const map = new Map<string, playlist_entry>();
-    list.forEach((i) => {
-        if (!map.has(i.title)) {
-            map.set(i.title, new playlist_entry(i.url, i.title, i.channel, i.thumbUrl, i.durationInSec));
-        }
-    });
+function add_playlist(guild: user_guild, list: playlist_entry[], items: ytpl.Item[]): number {
+    let songsAdded = 0;
     items.forEach((i) => {
-        if (!map.has(i.title)) {
-            map.set(i.title, new playlist_entry(i.url, i.title, i.author.name, i.bestThumbnail.url, i.durationSec));
+        if (!guild.songListMap.has(i.title)) {
+            const e = new playlist_entry(i.url, i.title, i.author.name, i.bestThumbnail.url, i.durationSec);
+            guild.songListMap.set(i.title, e);
+            list.push(e);
+            songsAdded++;
         }
     });
-    guild.songList = [];
-    map.forEach((i) => {
-        guild.songList.push(i);
-    });
+    return songsAdded;
 }
 
-async function load_playlist(guild: user_guild, url: string) {
-    await ytpl(url, { pages: 1 })
+async function load_playlist(guild: user_guild, url: string, page: number = 1): Promise<number> {
+    guild.lastPlaylistPageChecked = page;
+    let songsAdded = 0;
+    await ytpl(url, { pages: page })
         .then(async (pl) => {
             await guild.textChannel.send('Fetching playlist. This may take a bit');
             let msgRef = await guild.textChannel.send(`${guild.loadingSymbol}`);
-            add_playlist(guild, guild.songList, pl.items);
+            songsAdded += add_playlist(guild, guild.songList, pl.items);
 
             if (pl.continuation) {
                 let cont = await ytpl.continueReq(pl.continuation);
                 while (true) {
-                    add_playlist(guild, guild.songList, cont.items);
+                    guild.lastPlaylistPageChecked++;
+                    songsAdded += add_playlist(guild, guild.songList, cont.items);
                     if (!cont.continuation) break;
                     cont = await ytpl.continueReq(cont.continuation);
                 }
@@ -250,6 +248,7 @@ async function load_playlist(guild: user_guild, url: string) {
         .catch((e) => {
             guild.textChannel.send(`Failed to fetch playist`);
         });
+    return songsAdded;
 }
 
 async function print_matches(guild: user_guild, songs: playlist_entry[], page: number = 1, listLimit: number = 30) {
@@ -502,11 +501,15 @@ client.on('messageCreate', async (msg) => {
                     await start_playing(guild, msg.member);
                     return;
                 }
-                await load_playlist(guild, 'PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA');
+                await load_playlist(guild, guild.playlistUrl);
                 shuffle(guild.songList);
                 await start_playing(guild, msg.member);
             }
             break;
+        case 'update': {
+            let songsAdded = await load_playlist(guild, guild.playlistUrl);
+            msg.reply(`Added **${songsAdded}** new songs`);
+        }
         case 'play':
         case 'p':
             {

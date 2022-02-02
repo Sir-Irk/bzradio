@@ -12,6 +12,9 @@ import playDl from 'play-dl';
 
 export class user_guild {
     id: string;
+    playlistUrl: string = null;
+    lastPlaylistPageChecked: number = 0;
+    songListMap: Map<string, playlist_entry> = new Map<string, playlist_entry>();
     songList: playlist_entry[] = [];
     songTempQueue: playlist_entry[] = [];
     curSong = 0;
@@ -32,6 +35,7 @@ export class user_guild {
 
     constructor(id: string) {
         this.id = id;
+        this.playlistUrl = 'PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA';
 
         this.player = createAudioPlayer({
             behaviors: {
