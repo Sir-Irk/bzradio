@@ -1,4 +1,3 @@
-build/src
-build/index.js
+build/
 config.json
 node_modules/

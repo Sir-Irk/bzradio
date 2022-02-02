@@ -1,17 +1,9 @@
 import { prefix, token } from './config.json';
 
 import * as Discord from 'discord.js';
-import playDl, { DeezerAlbum, InfoData, YouTubeVideo } from 'play-dl';
+import playDl, { YouTubeVideo } from 'play-dl';
 import ytpl from 'ytpl';
-import {
-    createAudioResource,
-    createAudioPlayer,
-    joinVoiceChannel,
-    NoSubscriberBehavior,
-    VoiceConnection,
-    AudioPlayerStatus,
-    AudioResource,
-} from '@discordjs/voice';
+import { joinVoiceChannel, VoiceConnection, AudioPlayerStatus } from '@discordjs/voice';
 import { display_player, guilds, play_song, user_guild } from './guild';
 const client: Discord.Client = new Discord.Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES'] });
 
@@ -115,7 +107,7 @@ async function start_playing(guild: user_guild, member: Discord.GuildMember, url
             if (url) {
                 play_song_url(guild, url, guild.voiceConnection);
             } else {
-                play_song(guild, guild.songList[guild.curSong], guild.voiceConnection);
+                play_song(guild, guild.songList[guild.curSong]);
             }
         } else {
             guild.textChannel.send(`Failed to join voice channel`);
@@ -163,7 +155,7 @@ async function play_song_url(guild: user_guild, url: string, connection: VoiceCo
         .then((s) => {
             guild.lastSongPlayed = s;
             guild.currentSongDurationInSeconds = s.durationInSec;
-            play_song(guild, s, connection);
+            play_song(guild, s);
         })
         .catch((error) => {
             guild.textChannel.send(`Something went wrong fetching that url`);
@@ -260,7 +252,7 @@ async function load_playlist(guild: user_guild, url: string) {
         });
 }
 
-async function print_matches(guild: user_guild, songs: playlist_entry[], page: number = 1, listLimit: number = 40) {
+async function print_matches(guild: user_guild, songs: playlist_entry[], page: number = 1, listLimit: number = 30) {
     if (songs.length > 0) {
         let str = `**Matches found(${songs.length}):** \n\n`;
         const maxLen = listLimit;
@@ -270,6 +262,9 @@ async function print_matches(guild: user_guild, songs: playlist_entry[], page: n
         }
         if (songs.length > maxLen) {
             str += `...and ${songs.length - maxLen} more`;
+        }
+        if (str.length > 2000) {
+            str.slice(0, 2000 - 1);
         }
         guild.textChannel.send(str);
     } else {
@@ -342,13 +337,13 @@ client.on('messageCreate', async (msg) => {
                     }
 
                     guild.curSong = (guild.curSong + num) % guild.songList.length;
-                    play_song(guild, guild.songList[guild.curSong], guild.voiceConnection);
+                    play_song(guild, guild.songList[guild.curSong]);
                 } else {
                     guild.curSong = (guild.curSong + 1) % guild.songList.length;
                     if (guild.songTempQueue.length > 0) {
-                        play_song(guild, guild.songTempQueue.shift(), guild.voiceConnection);
+                        play_song(guild, guild.songTempQueue.shift());
                     } else {
-                        play_song(guild, guild.songList[guild.curSong], guild.voiceConnection);
+                        play_song(guild, guild.songList[guild.curSong]);
                     }
                 }
             }
@@ -370,12 +365,12 @@ client.on('messageCreate', async (msg) => {
                     let idx = guild.curSong - num;
                     if (idx < 0) idx += guild.songList.length;
                     guild.curSong = idx;
-                    play_song(guild, guild.songList[guild.curSong], guild.voiceConnection);
+                    play_song(guild, guild.songList[guild.curSong]);
                 } else {
                     let idx = guild.curSong - 1;
                     if (idx < 0) idx += guild.songList.length;
                     guild.curSong = idx;
-                    play_song(guild, guild.songList[guild.curSong], guild.voiceConnection);
+                    play_song(guild, guild.songList[guild.curSong]);
                 }
             }
             break;
@@ -527,7 +522,7 @@ client.on('messageCreate', async (msg) => {
                     } else {
                         const matches = await find_matches(guild, guild.songList, args.join(' ').trim());
                         if (matches.length === 1) {
-                            play_song(guild, matches[0], guild.voiceConnection);
+                            play_song(guild, matches[0]);
                         } else {
                             print_matches(guild, matches);
                         }

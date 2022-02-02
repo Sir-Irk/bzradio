@@ -8,7 +8,7 @@ import {
 } from '@discordjs/voice';
 import { delay, make_duration_str, playlist_entry } from '.';
 import * as Discord from 'discord.js';
-import playDl, { DeezerAlbum, InfoData, YouTubeVideo } from 'play-dl';
+import playDl from 'play-dl';
 
 export class user_guild {
     id: string;
@@ -42,16 +42,16 @@ export class user_guild {
             if (this.songList.length > 0) {
                 if (this.loopMode) {
                     if (this.lastSongPlayed) {
-                        play_song(this, this.lastSongPlayed, this.voiceConnection);
+                        play_song(this, this.lastSongPlayed);
                     } else {
                         this.textChannel.send(`Something went wrong with loop mode`);
-                        play_song(this, this.get_next_song(), this.voiceConnection);
+                        play_song(this, this.get_next_song());
                     }
                 } else {
                     if (this.songTempQueue.length > 0) {
-                        play_song(this, this.songTempQueue.shift(), this.voiceConnection);
+                        play_song(this, this.songTempQueue.shift());
                     } else {
-                        play_song(this, this.get_next_song(), this.voiceConnection);
+                        play_song(this, this.get_next_song());
                     }
                 }
             }
@@ -109,20 +109,18 @@ export class user_guild {
     }
 }
 
-export async function play_song(guild: user_guild, song: playlist_entry, connection: VoiceConnection) {
-    if (!connection) return;
+export async function play_song(guild: user_guild, song: playlist_entry) {
+    if (!guild.voiceConnection) return;
     let stream = null;
     try {
         stream = await playDl.stream(song.url);
-        guild.resource = createAudioResource(stream.stream, {
-            inputType: stream.type,
-        });
+        guild.resource = createAudioResource(stream.stream, { inputType: stream.type });
         guild.player.play(guild.resource);
-        connection.subscribe(guild.player);
+        guild.voiceConnection.subscribe(guild.player);
     } catch (e) {
         guild.textChannel.send(`Error fetching url: ${song.url}`);
         await delay(1000);
-        play_song(guild, guild.get_next_song(), connection);
+        play_song(guild, guild.get_next_song());
         return;
     }
 
