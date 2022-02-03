@@ -521,6 +521,7 @@ client.on('messageCreate', async (msg) => {
             }
             break;
         case 'update': {
+            msg.reply('updating playlist...');
             let songsAdded = await load_playlist(guild, guild.playlistUrl, guild.lastPlaylistPageChecked);
             msg.reply(`Added **${songsAdded}** new songs`);
         }
