@@ -203,7 +203,13 @@ async function find_matches(guild: user_guild, songs: playlist_entry[], titleToF
     }
     return [];
 }
-
+/**
+ * @description converts ytpl.Item[] to playlist_entry[] and appends to  "list"
+ * @param guild the user's guild
+ * @param list playlist to add items to
+ * @param items the items received from a ytpl query
+ * @returns number of items added to the list.
+ */
 function add_playlist(guild: user_guild, list: playlist_entry[], items: ytpl.Item[]): number {
     let songsAdded = 0;
     items.forEach((i) => {
@@ -216,7 +222,13 @@ function add_playlist(guild: user_guild, list: playlist_entry[], items: ytpl.Ite
     });
     return songsAdded;
 }
-
+/**
+ * @description Searches a playlist url and adds the results to the current playlist.
+ * @param guild the user's guild
+ * @param url a playlist url. Can be just the playlist id
+ * @param page the playlist page to start on. A page is 100 videos per.
+ * @returns the number of items added to the playlist(rejects duplicate titles).
+ */
 async function load_playlist(guild: user_guild, url: string, page: number = 1): Promise<number> {
     guild.lastPlaylistPageChecked = page;
     let songsAdded = 0;
@@ -485,6 +497,8 @@ client.on('messageCreate', async (msg) => {
         case 'clearp':
             {
                 guild.songList = [];
+                guild.songListMap.clear();
+                guild.lastPlaylistPageChecked = 1;
                 guild.curSong = 0;
                 msg.reply(`Playlist cleared`);
             }
