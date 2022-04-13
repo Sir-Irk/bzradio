@@ -53,7 +53,7 @@ export function shuffle(array: any[]): any[] {
 
 process.on('uncaughtException', async function (err: Error) {
     console.log(`ERROR: ${err?.stack}`);
-    process.abort();
+    //process.abort();
 });
 
 export function make_duration_hour_str(ms: number) {
