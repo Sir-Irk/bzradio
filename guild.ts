@@ -113,17 +113,28 @@ export class user_guild {
     }
 }
 
+const fetchUrlMaxAttempts = 10;
 export async function play_song(guild: user_guild, song: playlist_entry) {
     if (!guild.voiceConnection) return;
     let stream = null;
-    try {
-        stream = await playDl.stream(song.url);
-        guild.resource = createAudioResource(stream.stream, { inputType: stream.type });
-        guild.player.play(guild.resource);
-        guild.voiceConnection.subscribe(guild.player);
-    } catch (e) {
+    let attempts = 0;
+
+    while (attempts < fetchUrlMaxAttempts) {
+        try {
+            stream = await playDl.stream(song.url);
+            guild.resource = createAudioResource(stream.stream, { inputType: stream.type });
+            guild.player.play(guild.resource);
+            guild.voiceConnection.subscribe(guild.player);
+            break;
+        } catch (e) {
+            attempts++;
+            await delay(1000);
+            console.log(`Retrying url... ${attempts}`);
+        }
+    }
+
+    if (attempts == fetchUrlMaxAttempts) {
         guild.textChannel.send(`Error fetching url: ${song.url}`);
-        await delay(1000);
         play_song(guild, guild.get_next_song());
         return;
     }
@@ -131,7 +142,6 @@ export async function play_song(guild: user_guild, song: playlist_entry) {
     guild.lastSongPlayed = song;
     display_player(guild, song);
     guild.currentSongDurationInSeconds = song.durationInSec;
-    const status = guild.player.state.status;
 }
 
 export async function display_player(guild: user_guild, song: playlist_entry) {
