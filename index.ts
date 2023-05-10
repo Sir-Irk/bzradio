@@ -297,11 +297,9 @@ client.on('messageCreate', async (msg) => {
         return;
     }
     */
-    console.log(`Entered: Prefix is ${prefix} message is ${msg.content}`);
 
     if (!msg.content.startsWith(prefix)) return;
 
-    console.log("Getting guild");
     let guild: user_guild = guilds.find((g) => {
         return g.id === msg.guildId;
     });
@@ -317,7 +315,6 @@ client.on('messageCreate', async (msg) => {
     const args = body.split(/[\s,]+/);
     const command = args.shift().toLowerCase();
 
-    console.log("Reading command");
     switch (command.toLowerCase()) {
         case 'ping':
             {
