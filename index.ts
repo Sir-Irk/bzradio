@@ -5,7 +5,12 @@ import playDl, { YouTubeVideo } from 'play-dl';
 import ytpl from 'ytpl';
 import { joinVoiceChannel, VoiceConnection, AudioPlayerStatus } from '@discordjs/voice';
 import { display_player, guilds, play_song, user_guild } from './guild';
-const client: Discord.Client = new Discord.Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES'] });
+const client: Discord.Client = new Discord.Client({
+    intents: [Discord.GatewayIntentBits.Guilds,
+    Discord.GatewayIntentBits.MessageContent,
+    Discord.GatewayIntentBits.GuildMessages,
+    Discord.GatewayIntentBits.GuildVoiceStates]
+});
 
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -292,8 +297,11 @@ client.on('messageCreate', async (msg) => {
         return;
     }
     */
+    console.log(`Entered: Prefix is ${prefix} message is ${msg.content}`);
+
     if (!msg.content.startsWith(prefix)) return;
 
+    console.log("Getting guild");
     let guild: user_guild = guilds.find((g) => {
         return g.id === msg.guildId;
     });
@@ -309,6 +317,7 @@ client.on('messageCreate', async (msg) => {
     const args = body.split(/[\s,]+/);
     const command = args.shift().toLowerCase();
 
+    console.log("Reading command");
     switch (command.toLowerCase()) {
         case 'ping':
             {
@@ -342,7 +351,7 @@ client.on('messageCreate', async (msg) => {
 
                 if (args.length > 0) {
                     let num = parseInt(args[0]);
-                    if (num === NaN || num < 0) {
+                    if (Number.isNaN(num) || num < 0) {
                         msg.reply(`Invalid argument for <track number>. Input: ${num}`);
                         return;
                     }
@@ -369,7 +378,7 @@ client.on('messageCreate', async (msg) => {
 
                 if (args.length > 0) {
                     let num = parseInt(args[0]);
-                    if (num === NaN || num < 0) {
+                    if (Number.isNaN(num) || num < 0) {
                         msg.reply(`Invalid argument for <track number>. Input: ${num}`);
                         return;
                     }

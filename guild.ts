@@ -25,7 +25,7 @@ export class user_guild {
 
     resource: AudioResource = null;
     currentSongDurationInSeconds = 0;
-    playingEmbed: Discord.MessageEmbed = null;
+    playingEmbed: Discord.EmbedBuilder = null;
     progressMessage: Discord.Message = null;
     loopMode: boolean = false;
     lastSongPlayed: playlist_entry = null;
@@ -145,7 +145,7 @@ export async function play_song(guild: user_guild, song: playlist_entry) {
 }
 
 export async function display_player(guild: user_guild, song: playlist_entry) {
-    guild.playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`).setURL(`${song.url})`);
+    guild.playingEmbed = new Discord.EmbedBuilder().setTitle(`▶️ ${song.title}`).setURL(`${song.url})`);
     guild.playingEmbed.setImage(`${song.thumbUrl}`);
     if (guild.songTempQueue.length > 0 || guild.songList.length > 1) {
         const nextSong = guild.songTempQueue.length > 0 ? guild.songTempQueue[0] : guild.songList[guild.next_song_index()];

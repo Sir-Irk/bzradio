@@ -33,6 +33,9 @@ const Discord = __importStar(require("discord.js"));
 const play_dl_1 = __importDefault(require("play-dl"));
 class user_guild {
     id;
+    playlistUrl = null;
+    lastPlaylistPageChecked = 0;
+    songListMap = new Map();
     songList = [];
     songTempQueue = [];
     curSong = 0;
@@ -50,6 +53,7 @@ class user_guild {
     player = null;
     constructor(id) {
         this.id = id;
+        this.playlistUrl = 'PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA';
         this.player = (0, voice_1.createAudioPlayer)({
             behaviors: {
                 noSubscriber: voice_1.NoSubscriberBehavior.Pause,
@@ -59,19 +63,19 @@ class user_guild {
             if (this.songList.length > 0) {
                 if (this.loopMode) {
                     if (this.lastSongPlayed) {
-                        play_song(this, this.lastSongPlayed, this.voiceConnection);
+                        play_song(this, this.lastSongPlayed);
                     }
                     else {
                         this.textChannel.send(`Something went wrong with loop mode`);
-                        play_song(this, this.get_next_song(), this.voiceConnection);
+                        play_song(this, this.get_next_song());
                     }
                 }
                 else {
                     if (this.songTempQueue.length > 0) {
-                        play_song(this, this.songTempQueue.shift(), this.voiceConnection);
+                        play_song(this, this.songTempQueue.shift());
                     }
                     else {
-                        play_song(this, this.get_next_song(), this.voiceConnection);
+                        play_song(this, this.get_next_song());
                     }
                 }
             }
@@ -126,32 +130,38 @@ class user_guild {
     }
 }
 exports.user_guild = user_guild;
-async function play_song(guild, song, connection) {
-    if (!connection)
+const fetchUrlMaxAttempts = 10;
+async function play_song(guild, song) {
+    if (!guild.voiceConnection)
         return;
     let stream = null;
-    try {
-        stream = await play_dl_1.default.stream(song.url);
-        guild.resource = (0, voice_1.createAudioResource)(stream.stream, {
-            inputType: stream.type,
-        });
-        guild.player.play(guild.resource);
-        connection.subscribe(guild.player);
+    let attempts = 0;
+    while (attempts < fetchUrlMaxAttempts) {
+        try {
+            stream = await play_dl_1.default.stream(song.url);
+            guild.resource = (0, voice_1.createAudioResource)(stream.stream, { inputType: stream.type });
+            guild.player.play(guild.resource);
+            guild.voiceConnection.subscribe(guild.player);
+            break;
+        }
+        catch (e) {
+            attempts++;
+            await (0, _1.delay)(1000);
+            console.log(`Retrying url... ${attempts}`);
+        }
     }
-    catch (e) {
+    if (attempts == fetchUrlMaxAttempts) {
         guild.textChannel.send(`Error fetching url: ${song.url}`);
-        await (0, _1.delay)(1000);
-        play_song(guild, guild.get_next_song(), connection);
+        play_song(guild, guild.get_next_song());
         return;
     }
     guild.lastSongPlayed = song;
     display_player(guild, song);
     guild.currentSongDurationInSeconds = song.durationInSec;
-    const status = guild.player.state.status;
 }
 exports.play_song = play_song;
 async function display_player(guild, song) {
-    guild.playingEmbed = new Discord.MessageEmbed().setTitle(`▶️ ${song.title}`).setURL(`${song.url})`);
+    guild.playingEmbed = new Discord.EmbedBuilder().setTitle(`▶️ ${song.title}`).setURL(`${song.url})`);
     guild.playingEmbed.setImage(`${song.thumbUrl}`);
     if (guild.songTempQueue.length > 0 || guild.songList.length > 1) {
         const nextSong = guild.songTempQueue.length > 0 ? guild.songTempQueue[0] : guild.songList[guild.next_song_index()];
