@@ -130,6 +130,9 @@ export async function play_song(guild: user_guild, song: playlist_entry) {
             attempts++;
             await delay(1000);
             console.log(`Retrying url... ${attempts}`);
+            if (attempts == fetchUrlMaxAttempts) {
+                console.log(`Error: ${e}`);
+            }
         }
     }
 
