@@ -14,6 +14,7 @@
     "ffmpeg": "^0.0.4",
     "libsodium-wrappers": "^0.7.9",
     "play-dl": "^1.8.2",
+    "swc": "^1.0.11",
     "ytdl-core": "^4.10.0",
     "ytpl": "^2.2.3"
   },

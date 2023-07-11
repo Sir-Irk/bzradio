@@ -44,6 +44,7 @@ client.once('disconnect', () => {
     console.log('Disconnect!');
 });
 
+//Fisher-Yates Shuffle
 export function shuffle(array: any[]): any[] {
     let currentIndex = array.length;
     let randomIndex = 0;
@@ -54,6 +55,16 @@ export function shuffle(array: any[]): any[] {
         [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
     }
     return array;
+}
+
+/**
+ * @description wraps the value when less than zero or greater than max
+ * @param value the value to wrap 
+ * @param max max value to wrap at
+ * @returns wrapped index 
+ */
+export function index_wrap(value: number, max: number): number {
+    return (value + max) % max;
 }
 
 process.on('uncaughtException', async function (err: Error) {
@@ -135,7 +146,7 @@ async function make_playlist_entry_from_url(url: string) {
         );
         return result;
     } catch (e) {
-        throw e;
+        throw e; //lol
     }
 }
 
@@ -194,6 +205,13 @@ async function add_url(guild: user_guild, list: playlist_entry[], url: string) {
         guild.textChannel.send(`Failed to add url`);
     }
 }
+
+//Note prioritize exact matches
+async function find_exact_match(guild: user_guild, songs: playlist_entry[], titleToFind: string): Promise<playlist_entry> {
+    const title = titleToFind.toLowerCase();
+    return songs.find(s => s.title.toLowerCase() === title);
+}
+
 
 async function find_matches(guild: user_guild, songs: playlist_entry[], titleToFind: string): Promise<playlist_entry[]> {
     const title = titleToFind.toLowerCase();
@@ -320,7 +338,7 @@ client.on('messageCreate', async (msg) => {
     const args = body.split(/[\s,]+/);
     const command = args.shift().toLowerCase();
 
-    switch (command.toLowerCase()) {
+    switch (command) {
         case 'ping':
             {
                 const timeTaken = Date.now() - msg.createdTimestamp;
@@ -549,7 +567,16 @@ client.on('messageCreate', async (msg) => {
                         }
                         return;
                     } else {
-                        const matches = await find_matches(guild, guild.songList, args.join(' ').trim());
+                        const query = args.join(' ').trim();
+
+                        const match = await find_exact_match(guild, guild.songList, query);
+                        if (match) {
+                            guild.songTempQueue.push(match);
+                            msg.reply(`Added to the queue: ${match.title}\n${guild.songTempQueue.length} songs in queue`);
+                            return;
+                        }
+
+                        const matches = await find_matches(guild, guild.songList, query);
                         if (matches.length === 1) {
                             play_song(guild, matches[0]);
                         } else {
@@ -580,17 +607,22 @@ client.on('messageCreate', async (msg) => {
 
                 const num = parseInt(arg);
                 if (!isNaN(num)) {
-                    let idx = guild.curSong + num;
-                    if (idx < 0) {
-                        idx += guild.songList.length;
-                    }
-                    idx %= guild.songList.length;
+                    const idx = index_wrap(guild.curSong + num, guild.songList.length);
                     queue_song(guild.songTempQueue, guild.songList[idx], msg);
                     return;
                 }
 
                 const query = args.join(' ').trim();
+                //Prioritize exact matches
+                const match = await find_exact_match(guild, guild.songList, query);
+                if (match) {
+                    guild.songTempQueue.push(match);
+                    msg.reply(`Added to the queue: ${match.title}\n${guild.songTempQueue.length} songs in queue`);
+                    return;
+                }
+
                 const matches = await find_matches(guild, guild.songList, query);
+
                 if (matches.length === 1) {
                     guild.songTempQueue.push(matches[0]);
                     msg.reply(`Added to the queue: ${matches[0].title}\n${guild.songTempQueue.length} songs in queue`);

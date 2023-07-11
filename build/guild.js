@@ -148,6 +148,9 @@ async function play_song(guild, song) {
             attempts++;
             await (0, _1.delay)(1000);
             console.log(`Retrying url... ${attempts}`);
+            if (attempts == fetchUrlMaxAttempts) {
+                console.log(`Error: ${e}`);
+            }
         }
     }
     if (attempts == fetchUrlMaxAttempts) {
