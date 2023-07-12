@@ -297,6 +297,15 @@ async function load_playlist(guild: user_guild, playlist: playlist_entry[], url:
     return songsAdded;
 }
 
+export async function load_or_update_radio(guild: user_guild): Promise<number> {
+    let songsAdded = await load_playlist(guild, guild.songList, guild.playlistUrl, guild.lastPlaylistPageChecked);
+    await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
+    guild.commercialStack = [...guild.commercialList];
+    shuffle(guild.songList);
+    shuffle(guild.commercialStack);
+    return songsAdded;
+}
+
 async function print_matches(guild: user_guild, songs: playlist_entry[], page: number = 1, listLimit: number = 30) {
     if (songs.length > 0) {
         let str = `**Matches found(${songs.length}):** \n\n`;
@@ -562,21 +571,13 @@ client.on('messageCreate', async (msg) => {
                     await start_playing(guild, msg.member);
                     return;
                 }
-                await load_playlist(guild, guild.songList, guild.playlistUrl);
-                await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
-                guild.commercialStack = [...guild.commercialList];
-                shuffle(guild.songList);
-                shuffle(guild.commercialStack);
+                await load_or_update_radio(guild);
                 await start_playing(guild, msg.member);
             }
             break;
         case 'update': {
             msg.reply('updating playlist...');
-            let songsAdded = await load_playlist(guild, guild.songList, guild.playlistUrl, guild.lastPlaylistPageChecked);
-            await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
-            guild.commercialStack = [...guild.commercialList];
-            shuffle(guild.songList);
-            shuffle(guild.commercialStack);
+            let songsAdded = await load_or_update_radio(guild);
             msg.reply(`Added **${songsAdded}** new songs`);
         }
         case 'play':
