@@ -679,13 +679,13 @@ client.on('messageCreate', async (msg) => {
                 if (args.length > 0) {
                     let num = parseInt(args[0]);
                     if (Number.isNaN(num) || num < 1) {
-                        msg.reply(`Invalid argument for <commercial rate>. Arugment must be a number that is 1 or greater. Input: ${num}`);
+                        msg.reply(`Invalid argument for <commercial rate>. Arugment must be a number(0 to disable, 1 or greater for rate). Input: ${num}`);
                     } else {
                         guild.commercialInterval = num;
                         msg.reply(`Commercial rate has been set to ${num}`);
                     }
                 } else {
-                    msg.reply(`Usage: ${prefix}comrate <value>\n`);
+                    msg.reply(`Usage: ${prefix}comrate <value>. Set to 0 to disable commercials\n`);
                 }
             } break;
         case 'pl':

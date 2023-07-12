@@ -79,8 +79,7 @@ export class user_guild {
     }
 
     is_time_for_commercial(): boolean {
-        //increment happens before check so we check for >
-        return this.commercialIntervalCounter > this.commercialInterval;
+        return this.commercialInterval > 0 && this.commercialIntervalCounter > this.commercialInterval;
     }
 
     get_next_commercial(): playlist_entry {
