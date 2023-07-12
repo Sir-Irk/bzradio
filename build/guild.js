@@ -34,15 +34,21 @@ const play_dl_1 = __importDefault(require("play-dl"));
 class user_guild {
     id;
     playlistUrl = null;
-    lastPlaylistPageChecked = 0;
+    commercialPlaylistUrl = null;
     songListMap = new Map();
     songList = [];
+    commercialList = [];
+    commercialStack = [];
+    commercialInterval = 1; //@TODO: Add this to the config
+    commercialIntervalCounter = 0;
     songTempQueue = [];
+    lastPlaylistPageChecked = 0;
     curSong = 0;
     isPlaying = false;
     progSymbol = '⚪';
     loadingSymbol = '<a:loading:936525608404545566>';
     voiceConnection = null;
+    //voiceChannelId: string;
     resource = null;
     currentSongDurationInSeconds = 0;
     playingEmbed = null;
@@ -51,9 +57,12 @@ class user_guild {
     lastSongPlayed = null;
     textChannel = null;
     player = null;
+    updatePlaybackTimeIsRunning = false;
     constructor(id) {
         this.id = id;
+        //@TODO this should be loaded/saved in a configuration file
         this.playlistUrl = 'PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA';
+        this.commercialPlaylistUrl = 'PL1mb_nfn6SvLWa7UtuC-sRdb4ujThhqbX';
         this.player = (0, voice_1.createAudioPlayer)({
             behaviors: {
                 noSubscriber: voice_1.NoSubscriberBehavior.Pause,
@@ -61,23 +70,7 @@ class user_guild {
         });
         this.player.on(voice_1.AudioPlayerStatus.Idle, () => {
             if (this.songList.length > 0) {
-                if (this.loopMode) {
-                    if (this.lastSongPlayed) {
-                        play_song(this, this.lastSongPlayed);
-                    }
-                    else {
-                        this.textChannel.send(`Something went wrong with loop mode`);
-                        play_song(this, this.get_next_song());
-                    }
-                }
-                else {
-                    if (this.songTempQueue.length > 0) {
-                        play_song(this, this.songTempQueue.shift());
-                    }
-                    else {
-                        play_song(this, this.get_next_song());
-                    }
-                }
+                this.play_next_song();
             }
         });
         this.update_playback_time();
@@ -85,11 +78,52 @@ class user_guild {
     next_song_index() {
         return (this.curSong + 1) % this.songList.length;
     }
+    /**
+     * @description increments the current song index and returns the next song
+     * @returns the next song in the playlist
+     */
     get_next_song() {
         this.curSong = this.next_song_index();
         return this.songList[this.curSong];
     }
-    updatePlaybackTimeIsRunning = false;
+    is_time_for_commercial() {
+        //increment happens before check so we check for >
+        return this.commercialIntervalCounter > this.commercialInterval;
+    }
+    get_next_commercial() {
+        if (this.commercialStack.length === 0) {
+            this.commercialStack = [...this.commercialList];
+            (0, _1.shuffle)(this.commercialStack);
+        }
+        return this.commercialStack.pop();
+    }
+    play_next_song() {
+        if (this.loopMode) {
+            if (this.lastSongPlayed) {
+                play_song(this, this.lastSongPlayed);
+            }
+            else {
+                this.textChannel.send(`Something went wrong with loop mode`);
+                play_song(this, this.get_next_song());
+            }
+            return;
+        }
+        if (this.songTempQueue.length > 0) {
+            play_song(this, this.songTempQueue.shift());
+        }
+        else {
+            //increment counter first to avoid doubling up commercials when
+            //using a command that doesn't run through this path
+            this.commercialIntervalCounter++;
+            if (this.is_time_for_commercial()) {
+                play_song(this, this.get_next_commercial());
+                this.commercialIntervalCounter = 0;
+            }
+            else {
+                play_song(this, this.get_next_song());
+            }
+        }
+    }
     async update_playback_time() {
         if (this.updatePlaybackTimeIsRunning)
             return;
@@ -130,7 +164,7 @@ class user_guild {
     }
 }
 exports.user_guild = user_guild;
-const fetchUrlMaxAttempts = 10;
+const fetchUrlMaxAttempts = 3;
 async function play_song(guild, song) {
     if (!guild.voiceConnection)
         return;

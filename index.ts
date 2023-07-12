@@ -150,6 +150,14 @@ async function make_playlist_entry_from_url(url: string) {
     }
 }
 
+//export async function queue_song_to_front(queue: playlist_entry[], song: playlist_entry, msg: Discord.Message, printMessage: Boolean = false) {
+export async function queue_song_to_front(queue: playlist_entry[], song: playlist_entry) {
+    queue.unshift(song);
+    //if (printMessage) {
+    //msg.reply(`Added to the front of the queue: ${song.title}\n${queue.length} songs in queue`);
+    //}
+}
+
 async function queue_song(queue: playlist_entry[], song: playlist_entry, msg: Discord.Message) {
     queue.push(song);
     msg.reply(`Added to the queue: ${song.title}\n${queue.length} songs in queue`);
@@ -187,10 +195,8 @@ async function add_url(guild: user_guild, list: playlist_entry[], url: string) {
         return;
     }
 
-    let info = null;
-    let stream = null;
     try {
-        info = await playDl.video_info(url);
+        let info = await playDl.video_info(url);
         list.push(
             new playlist_entry(
                 url,
@@ -206,7 +212,6 @@ async function add_url(guild: user_guild, list: playlist_entry[], url: string) {
     }
 }
 
-//Note prioritize exact matches
 async function find_exact_match(guild: user_guild, songs: playlist_entry[], titleToFind: string): Promise<playlist_entry> {
     const title = titleToFind.toLowerCase();
     return songs.find(s => s.title.toLowerCase() === title);
@@ -249,11 +254,12 @@ function add_playlist(guild: user_guild, list: playlist_entry[], items: ytpl.Ite
 /**
  * @description Searches a playlist url and adds the results to the current playlist.
  * @param guild the user's guild
+ * @param playlist the playlist to add songs to 
  * @param url a playlist url. Can be just the playlist id
  * @param page the playlist page to start on. A page is 100 videos per.
  * @returns the number of items added to the playlist(rejects duplicate titles).
  */
-async function load_playlist(guild: user_guild, url: string, page: number = 1): Promise<number> {
+async function load_playlist(guild: user_guild, playlist: playlist_entry[], url: string, page: number = 1): Promise<number> {
     guild.lastPlaylistPageChecked = page;
     let songsAdded = 0;
 
@@ -263,29 +269,29 @@ async function load_playlist(guild: user_guild, url: string, page: number = 1): 
             await guild.textChannel.send('Fetching playlist. This may take a bit');
             let msgRef = await guild.textChannel.send(`${guild.loadingSymbol}`);
 
-            songsAdded += add_playlist(guild, guild.songList, pl.items);
+            songsAdded += add_playlist(guild, playlist, pl.items);
 
             if (pl.continuation) {
                 let cont = await ytpl.continueReq(pl.continuation);
                 while (true) {
                     guild.lastPlaylistPageChecked++;
-                    songsAdded += add_playlist(guild, guild.songList, cont.items);
+                    songsAdded += add_playlist(guild, playlist, cont.items);
                     if (!cont.continuation) break;
                     cont = await ytpl.continueReq(cont.continuation);
                 }
             }
 
             let durationSum = 0;
-            guild.songList.forEach((s) => {
+            playlist.forEach((s) => {
                 durationSum += s.durationInSec * 1000;
             });
 
             await msgRef.edit(
-                `Done! Loaded **${guild.songList.length}** songs for a total playtime duration of **${make_duration_hour_str(durationSum)}**`
+                `Done! Loaded **${playlist.length}** songs for a total playtime duration of **${make_duration_hour_str(durationSum)}**`
             );
         })
         .catch((e) => {
-            guild.textChannel.send(`Failed to fetch playist`);
+            guild.textChannel.send(`Failed to fetch playist ${url}`);
         });
 
     return songsAdded;
@@ -310,6 +316,19 @@ async function print_matches(guild: user_guild, songs: playlist_entry[], page: n
         guild.textChannel.send("Couldn't find that song in the playlist");
     }
 }
+
+/*
+client.on('voiceStateUpdate', async (oldMember, newMember) => {
+    let guild: user_guild = guilds.find((g) => {
+        return g.id === oldMember.guild?.id;
+    });
+ 
+    if (guild.) {
+        console.log("disconnect");
+    }
+});
+*/
+
 
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot) return;
@@ -379,11 +398,10 @@ client.on('messageCreate', async (msg) => {
                     guild.curSong = (guild.curSong + num) % guild.songList.length;
                     play_song(guild, guild.songList[guild.curSong]);
                 } else {
-                    guild.curSong = (guild.curSong + 1) % guild.songList.length;
                     if (guild.songTempQueue.length > 0) {
                         play_song(guild, guild.songTempQueue.shift());
                     } else {
-                        play_song(guild, guild.songList[guild.curSong]);
+                        play_song(guild, guild.get_next_song());
                     }
                 }
             }
@@ -544,14 +562,18 @@ client.on('messageCreate', async (msg) => {
                     await start_playing(guild, msg.member);
                     return;
                 }
-                await load_playlist(guild, guild.playlistUrl);
+                await load_playlist(guild, guild.songList, guild.playlistUrl);
+                await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
+                guild.commercialStack = [...guild.commercialList];
                 shuffle(guild.songList);
                 await start_playing(guild, msg.member);
             }
             break;
         case 'update': {
             msg.reply('updating playlist...');
-            let songsAdded = await load_playlist(guild, guild.playlistUrl, guild.lastPlaylistPageChecked);
+            let songsAdded = await load_playlist(guild, guild.songList, guild.playlistUrl, guild.lastPlaylistPageChecked);
+            await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
+            guild.commercialStack = [...guild.commercialList];
             msg.reply(`Added **${songsAdded}** new songs`);
         }
         case 'play':
@@ -652,6 +674,20 @@ client.on('messageCreate', async (msg) => {
                 }
             }
             break;
+        case 'comrate':
+            {
+                if (args.length > 0) {
+                    let num = parseInt(args[0]);
+                    if (Number.isNaN(num) || num < 1) {
+                        msg.reply(`Invalid argument for <commercial rate>. Arugment must be a number that is 1 or greater. Input: ${num}`);
+                    } else {
+                        guild.commercialInterval = num;
+                        msg.reply(`Commercial rate has been set to ${num}`);
+                    }
+                } else {
+                    msg.reply(`Usage: ${prefix}comrate <value>\n`);
+                }
+            } break;
         case 'pl':
         case 'playlist':
             {
@@ -659,7 +695,7 @@ client.on('messageCreate', async (msg) => {
                     msg.reply(`Usage: ${prefix}pl <youtube playlist>`);
                     break;
                 }
-                await load_playlist(guild, args[0]);
+                await load_playlist(guild, guild.songList, args[0]);
             }
             break;
         case 'player':
