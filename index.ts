@@ -297,8 +297,8 @@ async function load_playlist(guild: user_guild, playlist: playlist_entry[], url:
     return songsAdded;
 }
 
-export async function load_or_update_radio(guild: user_guild): Promise<number> {
-    let songsAdded = await load_playlist(guild, guild.songList, guild.playlistUrl, guild.lastPlaylistPageChecked);
+export async function load_or_update_radio(guild: user_guild, pageNumber: number = 1): Promise<number> {
+    let songsAdded = await load_playlist(guild, guild.songList, guild.playlistUrl, pageNumber);
     await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
     guild.commercialStack = [...guild.commercialList];
     shuffle(guild.songList);
@@ -577,7 +577,7 @@ client.on('messageCreate', async (msg) => {
             break;
         case 'update': {
             msg.reply('updating playlist...');
-            let songsAdded = await load_or_update_radio(guild);
+            const songsAdded = await load_or_update_radio(guild, guild.lastPlaylistPageChecked);
             msg.reply(`Added **${songsAdded}** new songs`);
         }
         case 'play':

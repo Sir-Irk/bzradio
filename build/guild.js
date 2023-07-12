@@ -87,8 +87,7 @@ class user_guild {
         return this.songList[this.curSong];
     }
     is_time_for_commercial() {
-        //increment happens before check so we check for >
-        return this.commercialIntervalCounter > this.commercialInterval;
+        return this.commercialInterval > 0 && this.commercialIntervalCounter > this.commercialInterval;
     }
     get_next_commercial() {
         if (this.commercialStack.length === 0) {
