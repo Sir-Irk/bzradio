@@ -566,6 +566,7 @@ client.on('messageCreate', async (msg) => {
                 await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
                 guild.commercialStack = [...guild.commercialList];
                 shuffle(guild.songList);
+                shuffle(guild.commercialStack);
                 await start_playing(guild, msg.member);
             }
             break;
@@ -574,6 +575,8 @@ client.on('messageCreate', async (msg) => {
             let songsAdded = await load_playlist(guild, guild.songList, guild.playlistUrl, guild.lastPlaylistPageChecked);
             await load_playlist(guild, guild.commercialList, guild.commercialPlaylistUrl);
             guild.commercialStack = [...guild.commercialList];
+            shuffle(guild.songList);
+            shuffle(guild.commercialStack);
             msg.reply(`Added **${songsAdded}** new songs`);
         }
         case 'play':
