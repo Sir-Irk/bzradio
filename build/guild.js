@@ -62,7 +62,7 @@ class user_guild {
         this.id = id;
         //@TODO this should be loaded/saved in a configuration file
         this.playlistUrl = 'PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA';
-        this.commercialPlaylistUrl = 'PL1mb_nfn6SvLWa7UtuC-sRdb4ujThhqbX';
+        this.commercialPlaylistUrl = 'PLJdv7u2ne9iCQelfTeK7JJjJCWPZemONa';
         this.player = (0, voice_1.createAudioPlayer)({
             behaviors: {
                 noSubscriber: voice_1.NoSubscriberBehavior.Pause,

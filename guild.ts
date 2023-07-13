@@ -49,7 +49,7 @@ export class user_guild {
 
         //@TODO this should be loaded/saved in a configuration file
         this.playlistUrl = 'PLJdv7u2ne9iANURyGydzS2lEdNOXLkccA';
-        this.commercialPlaylistUrl = 'PL1mb_nfn6SvLWa7UtuC-sRdb4ujThhqbX'
+        this.commercialPlaylistUrl = 'PLJdv7u2ne9iCQelfTeK7JJjJCWPZemONa'
 
         this.player = createAudioPlayer({
             behaviors: {
