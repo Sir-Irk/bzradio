@@ -682,7 +682,7 @@ client.on('messageCreate', async (msg) => {
             {
                 if (args.length > 0) {
                     let num = parseInt(args[0]);
-                    if (Number.isNaN(num) || num < 1) {
+                    if (Number.isNaN(num) || num < 0) {
                         msg.reply(`Invalid argument for <commercial rate>. Arugment must be a number(0 to disable, 1 or greater for rate). Input: ${num}`);
                     } else {
                         guild.commercialInterval = num;
