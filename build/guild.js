@@ -15,18 +15,30 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.guilds = exports.display_player = exports.play_song = exports.user_guild = void 0;
+exports.guilds = exports.user_guild = void 0;
+exports.play_song = play_song;
+exports.display_player = display_player;
 const voice_1 = require("@discordjs/voice");
 const _1 = require(".");
 const Discord = __importStar(require("discord.js"));
@@ -65,7 +77,7 @@ class user_guild {
         this.commercialPlaylistUrl = 'PLJdv7u2ne9iCQelfTeK7JJjJCWPZemONa';
         this.player = (0, voice_1.createAudioPlayer)({
             behaviors: {
-                noSubscriber: voice_1.NoSubscriberBehavior.Pause,
+                noSubscriber: voice_1.NoSubscriberBehavior.Play,
             },
         });
         this.player.on(voice_1.AudioPlayerStatus.Idle, () => {
@@ -195,7 +207,6 @@ async function play_song(guild, song) {
     display_player(guild, song);
     guild.currentSongDurationInSeconds = song.durationInSec;
 }
-exports.play_song = play_song;
 async function display_player(guild, song) {
     guild.playingEmbed = new Discord.EmbedBuilder().setTitle(`▶️ ${song.title}`).setURL(`${song.url})`);
     guild.playingEmbed.setImage(`${song.thumbUrl}`);
@@ -206,7 +217,6 @@ async function display_player(guild, song) {
     await guild.textChannel.send({ embeds: [guild.playingEmbed] });
     guild.progressMessage = await guild.textChannel.send(`${guild.loadingSymbol}`);
 }
-exports.display_player = display_player;
 exports.guilds = [];
 for (let i = 0; i < exports.guilds.length; ++i) {
     const g = exports.guilds[i];

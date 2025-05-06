@@ -53,7 +53,7 @@ export class user_guild {
 
         this.player = createAudioPlayer({
             behaviors: {
-                noSubscriber: NoSubscriberBehavior.Pause,
+                noSubscriber: NoSubscriberBehavior.Play,
             },
         });
         this.player.on(AudioPlayerStatus.Idle, () => {

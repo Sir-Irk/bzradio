@@ -3,7 +3,7 @@ import { prefix, token } from './config.json';
 import * as Discord from 'discord.js';
 import playDl, { YouTubeVideo } from 'play-dl';
 import ytpl from 'ytpl';
-import { joinVoiceChannel, VoiceConnection, AudioPlayerStatus } from '@discordjs/voice';
+import { joinVoiceChannel, VoiceConnection, AudioPlayerStatus, DiscordGatewayAdapterCreator } from '@discordjs/voice';
 import { display_player, guilds, play_song, user_guild } from './guild';
 const client: Discord.Client = new Discord.Client({
     intents: [Discord.GatewayIntentBits.Guilds,
@@ -116,7 +116,7 @@ async function start_playing(guild: user_guild, member: Discord.GuildMember, url
         guild.voiceConnection = joinVoiceChannel({
             channelId: member.voice.channelId,
             guildId: member.guild.id,
-            adapterCreator: member.guild.voiceAdapterCreator,
+            adapterCreator: member.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator, 
         });
 
         if (guild.voiceConnection) {
