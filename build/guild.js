@@ -42,11 +42,12 @@ exports.display_player = display_player;
 const voice_1 = require("@discordjs/voice");
 const _1 = require(".");
 const Discord = __importStar(require("discord.js"));
-const play_dl_1 = __importDefault(require("play-dl"));
+//import playDl from 'play-dl';
+const ytdl_core_1 = __importDefault(require("@distube/ytdl-core"));
 class user_guild {
     id;
-    playlistUrl = null;
-    commercialPlaylistUrl = null;
+    playlistUrl;
+    commercialPlaylistUrl;
     songListMap = new Map();
     songList = [];
     commercialList = [];
@@ -59,16 +60,16 @@ class user_guild {
     isPlaying = false;
     progSymbol = '⚪';
     loadingSymbol = '<a:loading:936525608404545566>';
-    voiceConnection = null;
+    voiceConnection;
     //voiceChannelId: string;
-    resource = null;
+    resource;
     currentSongDurationInSeconds = 0;
-    playingEmbed = null;
-    progressMessage = null;
+    playingEmbed;
+    progressMessage;
     loopMode = false;
-    lastSongPlayed = null;
-    textChannel = null;
-    player = null;
+    lastSongPlayed;
+    textChannel;
+    player;
     updatePlaybackTimeIsRunning = false;
     constructor(id) {
         this.id = id;
@@ -164,10 +165,10 @@ class user_guild {
             }
             else {
                 if (!this.resource) {
-                    //console.log('resource is null');
+                    console.log('resource is null');
                 }
                 if (!this.progressMessage) {
-                    //console.log('prog message is null');
+                    console.log('prog message is null');
                 }
             }
             await (0, _1.delay)(2000);
@@ -179,14 +180,21 @@ const fetchUrlMaxAttempts = 3;
 async function play_song(guild, song) {
     if (!guild.voiceConnection)
         return;
-    let stream = null;
     let attempts = 0;
     while (attempts < fetchUrlMaxAttempts) {
         try {
-            stream = await play_dl_1.default.stream(song.url);
-            guild.resource = (0, voice_1.createAudioResource)(stream.stream, { inputType: stream.type });
+            console.log(`Attempting to load URL: ${song.url}`);
+            const stream = (0, ytdl_core_1.default)(song.url, { filter: 'audioonly' });
+            guild.resource = (0, voice_1.createAudioResource)(stream);
+            console.log(`Loaded resource ${guild.resource.playbackDuration}`);
             guild.player.play(guild.resource);
-            guild.voiceConnection.subscribe(guild.player);
+            let subscription = guild.voiceConnection.subscribe(guild.player);
+            if (subscription === undefined) {
+                console.log(`Voice connection failed to subscribe to player"`);
+            }
+            else {
+                console.log(`Voice connection subscribed: ${subscription.player}`);
+            }
             break;
         }
         catch (e) {
