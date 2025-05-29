@@ -13,7 +13,7 @@ const client: Discord.Client = new Discord.Client({
 });
 
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
+const allowedChannelID = "741494983462355080";
 const DEBUG_MODE: boolean = true;
 
 export class playlist_entry {
@@ -341,6 +341,7 @@ client.on('voiceStateUpdate', async (oldMember, newMember) => {
 
 client.on('messageCreate', async (msg) => {
 	if (msg.author.bot) return;
+	if (msg.channelId != allowedChannelID) return;
 	/*
 	if (DEBUG_MODE && msg.guildId !== `922243045787852890`) {
 		return;

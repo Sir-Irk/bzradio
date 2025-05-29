@@ -165,10 +165,10 @@ class user_guild {
             }
             else {
                 if (!this.resource) {
-                    console.log('resource is null');
+                    //console.log('resource is null');
                 }
                 if (!this.progressMessage) {
-                    console.log('prog message is null');
+                    //console.log('prog message is null');
                 }
             }
             await (0, _1.delay)(2000);
@@ -183,18 +183,10 @@ async function play_song(guild, song) {
     let attempts = 0;
     while (attempts < fetchUrlMaxAttempts) {
         try {
-            console.log(`Attempting to load URL: ${song.url}`);
             const stream = (0, ytdl_core_1.default)(song.url, { filter: 'audioonly' });
             guild.resource = (0, voice_1.createAudioResource)(stream);
-            console.log(`Loaded resource ${guild.resource.playbackDuration}`);
             guild.player.play(guild.resource);
             let subscription = guild.voiceConnection.subscribe(guild.player);
-            if (subscription === undefined) {
-                console.log(`Voice connection failed to subscribe to player"`);
-            }
-            else {
-                console.log(`Voice connection subscribed: ${subscription.player}`);
-            }
             break;
         }
         catch (e) {
